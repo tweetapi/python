@@ -47,8 +47,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://tweetapi.com?utm_source=pypi&utm_medium=readme&utm_campaign=python-sdk"
 Documentation = "https://tweetapi.com/docs?utm_source=pypi&utm_medium=readme&utm_campaign=python-sdk"
-Repository = "https://github.com/tweetapi/tweetapi-python"
-Issues = "https://github.com/tweetapi/tweetapi-python/issues"
+Repository = "https://github.com/tweetapi/python"
+Issues = "https://github.com/tweetapi/python/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tweetapi"]

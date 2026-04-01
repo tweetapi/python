@@ -236,7 +236,7 @@ client = TweetAPI(
 - [Full Documentation](https://tweetapi.com/docs?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
 - [Get API Key (Free)](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
 - [Dashboard](https://tweetapi.com/dashboard?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
-- [Node.js SDK](https://github.com/tweetapi/tweetapi-node)
+- [Node.js SDK](https://github.com/tweetapi/node)
 
 ## License
 
