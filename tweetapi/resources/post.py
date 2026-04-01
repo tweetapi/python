@@ -1,0 +1,52 @@
+from __future__ import annotations
+
+from typing import Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..client import TweetAPI
+
+
+class PostResource:
+    def __init__(self, client: TweetAPI) -> None:
+        self._client = client
+
+    def create_post(self, *, auth_token: str, text: str, proxy: str, disable_link_preview: Optional[bool] = None) -> dict[str, Any]:
+        """Create a new tweet."""
+        return self._client._post("/tw-v2/interaction/create-post", {
+            "authToken": auth_token, "text": text, "proxy": proxy,
+            "disableLinkPreview": disable_link_preview,
+        })
+
+    def create_post_quote(self, *, auth_token: str, text: str, attachment_url: str, proxy: str, disable_link_preview: Optional[bool] = None) -> dict[str, Any]:
+        """Create a quote tweet."""
+        return self._client._post("/tw-v2/interaction/create-post-quote", {
+            "authToken": auth_token, "text": text, "attachmentUrl": attachment_url,
+            "proxy": proxy, "disableLinkPreview": disable_link_preview,
+        })
+
+    def create_post_with_media(self, *, auth_token: str, text: str, media: list[Any], proxy: str, disable_link_preview: Optional[bool] = None) -> dict[str, Any]:
+        """Create a tweet with media attachments."""
+        return self._client._post("/tw-v2/interaction/create-post-with-media", {
+            "authToken": auth_token, "text": text, "media": media,
+            "proxy": proxy, "disableLinkPreview": disable_link_preview,
+        })
+
+    def reply_post(self, *, auth_token: str, text: str, tweet_id: str, proxy: str, disable_link_preview: Optional[bool] = None) -> dict[str, Any]:
+        """Reply to a tweet."""
+        return self._client._post("/tw-v2/interaction/reply-post", {
+            "authToken": auth_token, "text": text, "tweetId": tweet_id,
+            "proxy": proxy, "disableLinkPreview": disable_link_preview,
+        })
+
+    def reply_post_with_media(self, *, auth_token: str, text: str, tweet_id: str, media: list[Any], proxy: str, disable_link_preview: Optional[bool] = None) -> dict[str, Any]:
+        """Reply to a tweet with media attachments."""
+        return self._client._post("/tw-v2/interaction/reply-post-with-media", {
+            "authToken": auth_token, "text": text, "tweetId": tweet_id,
+            "media": media, "proxy": proxy, "disableLinkPreview": disable_link_preview,
+        })
+
+    def delete_post(self, *, auth_token: str, tweet_id: str, proxy: Optional[str] = None) -> dict[str, Any]:
+        """Delete a tweet."""
+        return self._client._post("/tw-v2/interaction/delete-post", {
+            "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
+        })
