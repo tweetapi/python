@@ -22,8 +22,8 @@ class UserResource:
         """Get a user profile by user ID."""
         return self._client._get("/tw-v2/user/by-id", {"userId": user_id})
 
-    def get_by_user_ids(self, *, user_ids: str) -> dict[str, Any]:
-        """Get multiple user profiles by user IDs (comma-separated)."""
+    def get_by_user_ids(self, *, user_ids: list[str]) -> dict[str, Any]:
+        """Get multiple user profiles by user IDs (list of ID strings, max 50)."""
         return self._client._get("/tw-v2/user/by-ids", {"userIds": user_ids})
 
     def get_tweets(self, *, user_id: str, cursor: Optional[str] = None) -> dict[str, Any]:
