@@ -17,8 +17,10 @@ from tweetapi import (
 BASE_URL = "https://api.tweetapi.com"
 
 
-def make_client() -> TweetAPI:
-    return TweetAPI(api_key="test-api-key")
+def make_client(**kwargs) -> TweetAPI:
+    defaults = {"api_key": "test-api-key", "max_retries": 0}
+    defaults.update(kwargs)
+    return TweetAPI(**defaults)
 
 
 class TestClientInit:
@@ -240,6 +242,6 @@ class TestErrorHandling:
         assert exc_info.value.code == "ACCOUNT_SUSPENDED"
 
     def test_network_error_on_connection_failure(self):
-        client = TweetAPI(api_key="key", base_url="http://localhost:1")
+        client = TweetAPI(api_key="key", base_url="http://localhost:1", max_retries=0)
         with pytest.raises(NetworkError):
             client.user.get_by_username(username="test")

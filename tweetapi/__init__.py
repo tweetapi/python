@@ -21,6 +21,7 @@ from .errors import (
     ServerError,
     ConnectionError_ as NetworkError,
 )
+from .pagination import paginate, paginate_pages
 
 __all__ = [
     "TweetAPI",
@@ -32,6 +33,8 @@ __all__ = [
     "RateLimitError",
     "ServerError",
     "NetworkError",
+    "paginate",
+    "paginate_pages",
 ]
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"

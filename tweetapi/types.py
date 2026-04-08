@@ -482,3 +482,82 @@ class LoginResponse(TypedDict):
     cookies: LoginCookies
     user: LoginUser
     timestamp: str
+
+
+# ─── Typed Response Wrappers ────────────────────────────────────────────────
+# Specific wrappers that give better IDE autocomplete than the generic
+# ``ApiResponse`` / ``PaginatedResponse`` with ``data: Any``.
+
+
+class UserResponse(TypedDict):
+    data: User
+
+
+class UsersResponse(TypedDict):
+    data: list[User]
+
+
+class UserPaginatedResponse(TypedDict):
+    data: list[User]
+    pagination: Pagination
+
+
+class TweetResponse(TypedDict):
+    data: Tweet
+
+
+class TweetsPaginatedResponse(TypedDict):
+    data: list[Tweet]
+    pagination: Pagination
+
+
+class TweetTranslationResponse(TypedDict):
+    data: TweetTranslation
+
+
+class UserRelationshipResponse(TypedDict):
+    data: UserRelationship
+
+
+class UserAnalyticsResponse(TypedDict):
+    data: UserAnalytics
+
+
+class ListResponse(TypedDict):
+    data: List
+
+
+class ListPaginatedResponse(TypedDict):
+    data: list[Any]
+    pagination: Pagination
+
+
+class CommunityResponse(TypedDict):
+    data: Community
+
+
+class CommunityMemberPaginatedResponse(TypedDict):
+    data: list[CommunityMember]
+    pagination: Pagination
+
+
+class CommunitySearchPaginatedResponse(TypedDict):
+    data: list[CommunitySearchResult]
+    pagination: Pagination
+
+
+class SpaceResponse(TypedDict):
+    data: Space
+
+
+class SpaceStreamResponse(TypedDict):
+    data: SpaceStreamInfo
+
+
+class NotificationPaginatedResponse(TypedDict):
+    data: list[Notification]
+    pagination: Pagination
+
+
+class LoginApiResponse(TypedDict):
+    data: LoginResponse

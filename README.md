@@ -37,10 +37,13 @@ next_page = client.user.get_followers(
 ## Features
 
 - **70+ endpoints** covering users, tweets, posts, interactions, DMs, communities, spaces, and search
-- **Full type hints** with TypedDict definitions for IDE autocomplete
+- **Full type hints** with TypedDict response types for IDE autocomplete
+- **Automatic retry with backoff** on rate limits (429) and server errors (5xx)
+- **Auto-pagination helpers** — iterate all pages with a simple `for` loop
 - **Solid error handling** with typed exceptions (`RateLimitError`, `NotFoundError`, etc.)
+- **Rate limit awareness** — `retry_after` respected automatically, state exposed via `client.rate_limit_info`
+- **Split timeouts** — separate connect and read timeouts
 - **Single dependency** — `requests` only
-- **Pagination support** with cursor-based navigation
 - **Python 3.9+** compatible
 
 ## API Reference
@@ -170,12 +173,71 @@ next_page = client.user.get_followers(
 | `client.dm.get_dm_user_updates(auth_token=..., cursor=...)` | DM user updates |
 | `client.dm.accept_conversation(auth_token=..., conversation_id=...)` | Accept request |
 
-## Error Handling
+## Auto-Pagination
 
-The SDK throws typed exceptions you can catch and handle:
+Use the `paginate()` and `paginate_pages()` helpers to iterate through all pages automatically:
 
 ```python
-import time
+from tweetapi import TweetAPI, paginate, paginate_pages
+
+client = TweetAPI(api_key="YOUR_API_KEY")
+
+# Iterate individual items across all pages
+for user in paginate(
+    lambda cursor: client.user.get_followers(user_id="123456", cursor=cursor),
+):
+    print(user["username"])
+
+# Iterate full pages (access page-level data)
+for page in paginate_pages(
+    lambda cursor: client.explore.search(query="bitcoin", type="Latest", cursor=cursor),
+    max_pages=5,  # optional: limit number of pages
+):
+    print(f"Got {len(page['data'])} results")
+    print(f"Next cursor: {page['pagination']['nextCursor']}")
+```
+
+Works with any paginated endpoint — followers, tweets, search results, list members, community posts, etc.
+
+## Automatic Retry with Backoff
+
+The SDK automatically retries on transient errors with exponential backoff:
+
+- **429 (Rate Limit)** — waits the `retry_after` duration from the API, then retries
+- **5xx (Server Error)** — retries with exponential backoff + jitter
+- **Network errors** — retries on timeouts and connection failures
+- **4xx (Client Error)** — never retried (400, 401, 403, 404 fail immediately)
+
+Default: 3 retries, 2x backoff, 1s initial delay, 30s max delay.
+
+```python
+# Customize retry behavior
+client = TweetAPI(
+    api_key="YOUR_API_KEY",
+    max_retries=5,             # default: 3
+    initial_retry_delay=2.0,   # default: 1.0 (seconds)
+    backoff_multiplier=3.0,    # default: 2.0
+    max_retry_delay=60.0,      # default: 30.0 (seconds)
+)
+
+# Disable retries entirely
+client = TweetAPI(api_key="YOUR_API_KEY", max_retries=0)
+```
+
+### Rate Limit Awareness
+
+After a 429 response, the SDK exposes the last known rate limit state:
+
+```python
+print(client.rate_limit_info)
+# {"retry_after": 30, "timestamp": 1712345678.0} — or None if no 429 encountered
+```
+
+## Error Handling
+
+The SDK raises typed exceptions you can catch and handle. With automatic retries enabled (default), you'll only see these after all retry attempts are exhausted:
+
+```python
 from tweetapi import (
     TweetAPI,
     TweetAPIError,
@@ -192,9 +254,7 @@ client = TweetAPI(api_key="YOUR_API_KEY")
 try:
     user = client.user.get_by_username(username="elonmusk")
 except RateLimitError as e:
-    # Wait and retry
     print(f"Rate limited. Retry in {e.retry_after}s")
-    time.sleep(e.retry_after)
 except NotFoundError:
     print("User not found")
 except AuthenticationError:
@@ -206,7 +266,6 @@ except ServerError:
 except NetworkError:
     print("Network error — check your connection")
 except TweetAPIError as e:
-    # Catch-all for any other API error
     print(f"Error [{e.code}]: {e.message}")
 ```
 
@@ -222,8 +281,17 @@ Every error includes:
 client = TweetAPI(
     api_key="YOUR_API_KEY",           # Required
     base_url="https://...",           # Optional (default: https://api.tweetapi.com)
-    timeout=30,                       # Optional (default: 30 seconds)
+    timeout=30,                       # Optional — single value for both connect + read
+    connect_timeout=10.0,             # Optional (default: 10s)
+    read_timeout=30.0,                # Optional (default: 30s)
+    max_retries=3,                    # Optional (default: 3, set 0 to disable)
+    backoff_multiplier=2.0,           # Optional (default: 2.0)
+    initial_retry_delay=1.0,          # Optional (default: 1.0s)
+    max_retry_delay=30.0,             # Optional (default: 30.0s)
 )
+
+# You can also pass a tuple for timeout
+client = TweetAPI(api_key="YOUR_API_KEY", timeout=(5, 30))  # (connect, read)
 ```
 
 ## Requirements

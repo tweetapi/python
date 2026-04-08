@@ -4,13 +4,14 @@ from typing import Any, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..client import TweetAPI
+    from ..types import SearchResponse
 
 
 class ExploreResource:
     def __init__(self, client: TweetAPI) -> None:
         self._client = client
 
-    def search(self, *, query: str, type: str, cursor: Optional[str] = None) -> dict[str, Any]:
+    def search(self, *, query: str, type: str, cursor: Optional[str] = None) -> SearchResponse:
         """Search for tweets, users, photos, or videos.
 
         Args:
