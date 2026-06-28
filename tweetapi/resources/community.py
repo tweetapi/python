@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..client import TweetAPI
@@ -9,6 +9,7 @@ if TYPE_CHECKING:
         CommunityResponse,
         CommunityMemberPaginatedResponse,
         CommunitySearchPaginatedResponse,
+        TweetMediaInput,
         TweetsPaginatedResponse,
     )
 
@@ -40,11 +41,27 @@ class CommunityResource:
             "proxy": proxy, "disableLinkPreview": disable_link_preview,
         })
 
-    def create_post_with_media(self, *, auth_token: str, text: str, community_id: str, media: list[Any], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
+    def create_post_with_media(self, *, auth_token: str, text: str, community_id: str, media: list[TweetMediaInput], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
         """Create a post with media in a community."""
         return self._client._post("/tw-v2/interaction/create-community-post-with-media", {
             "authToken": auth_token, "text": text, "communityId": community_id,
             "media": media, "proxy": proxy, "disableLinkPreview": disable_link_preview,
+        })
+
+    def create_quote(self, *, auth_token: str, text: str, attachment_url: str, community_id: str, proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
+        """Create a quote post in a community."""
+        return self._client._post("/tw-v2/interaction/create-community-quote", {
+            "authToken": auth_token, "text": text, "attachmentUrl": attachment_url,
+            "communityId": community_id, "proxy": proxy,
+            "disableLinkPreview": disable_link_preview,
+        })
+
+    def create_quote_with_media(self, *, auth_token: str, text: str, attachment_url: str, community_id: str, media: list[TweetMediaInput], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
+        """Create a quote post with media in a community."""
+        return self._client._post("/tw-v2/interaction/create-community-quote-with-media", {
+            "authToken": auth_token, "text": text, "attachmentUrl": attachment_url,
+            "communityId": community_id, "media": media, "proxy": proxy,
+            "disableLinkPreview": disable_link_preview,
         })
 
     def reply_post(self, *, auth_token: str, text: str, tweet_id: str, community_id: str, proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:

@@ -83,12 +83,20 @@ next_page = client.user.get_followers(
 
 | Method | Description |
 |--------|-------------|
-| `client.post.create_post(auth_token=..., text=..., proxy=...)` | Create a tweet |
-| `client.post.create_post_quote(auth_token=..., text=..., attachment_url=..., proxy=...)` | Quote tweet |
-| `client.post.create_post_with_media(auth_token=..., text=..., media=..., proxy=...)` | Tweet with media |
+| `client.post.create_post(auth_token=..., text=..., proxy=..., reply_option=...)` | Create a tweet |
+| `client.post.create_post_quote(auth_token=..., text=..., attachment_url=..., proxy=..., reply_option=...)` | Quote tweet |
+| `client.post.create_post_with_media(auth_token=..., text=..., media=..., proxy=..., reply_option=...)` | Tweet with media |
 | `client.post.reply_post(auth_token=..., text=..., tweet_id=..., proxy=...)` | Reply to a tweet |
 | `client.post.reply_post_with_media(...)` | Reply with media |
 | `client.post.delete_post(auth_token=..., tweet_id=...)` | Delete a tweet |
+
+### Profile
+
+| Method | Description |
+|--------|-------------|
+| `client.profile.update(auth_token=..., name=..., bio=..., location=..., website=..., proxy=...)` | Update profile fields |
+| `client.profile.avatar(auth_token=..., media=..., proxy=...)` | Update profile avatar |
+| `client.profile.banner(auth_token=..., media=..., proxy=...)` | Update profile banner |
 
 ### Interaction
 
@@ -115,6 +123,9 @@ next_page = client.user.get_followers(
 | `client.list.get_tweets(list_id=...)` | Get tweets in a list |
 | `client.list.get_members(list_id=...)` | Get list members |
 | `client.list.get_followers(list_id=...)` | Get list followers |
+| `client.list.create(auth_token=..., name=..., description=..., is_private=...)` | Create a list |
+| `client.list.add_member(auth_token=..., list_id=..., user_id=..., proxy=...)` | Add a member |
+| `client.list.remove_member(auth_token=..., list_id=..., user_id=..., proxy=...)` | Remove a member |
 
 ### Community
 
@@ -126,6 +137,8 @@ next_page = client.user.get_followers(
 | `client.community.search(query=...)` | Search communities |
 | `client.community.create_post(auth_token=..., text=..., community_id=..., proxy=...)` | Post in community |
 | `client.community.create_post_with_media(...)` | Post with media |
+| `client.community.create_quote(auth_token=..., text=..., attachment_url=..., community_id=..., proxy=...)` | Quote post in community |
+| `client.community.create_quote_with_media(...)` | Quote post with media |
 | `client.community.reply_post(...)` | Reply to community post |
 | `client.community.reply_post_with_media(...)` | Reply with media |
 | `client.community.join(auth_token=..., community_id=...)` | Join |
@@ -172,6 +185,77 @@ next_page = client.user.get_followers(
 | `client.dm.get_conversation(auth_token=..., conversation_id=...)` | Get messages |
 | `client.dm.get_dm_user_updates(auth_token=..., cursor=...)` | DM user updates |
 | `client.dm.accept_conversation(auth_token=..., conversation_id=...)` | Accept request |
+
+## Posting and Profile Media
+
+Tweet media accepts an existing TweetAPI media ID, a URL, or inline base64 data:
+
+```python
+client.post.create_post_with_media(
+    auth_token="AUTH_TOKEN",
+    text="Launch update",
+    media=[{"media_id": "1971008286821380096"}],
+    proxy="host:port:user:pass",
+)
+```
+
+Use `reply_option` to set reply controls when creating standard, quote, or media posts:
+
+```python
+client.post.create_post(
+    auth_token="AUTH_TOKEN",
+    text="Followers can reply",
+    proxy="host:port:user:pass",
+    reply_option={"mode": "followers"},
+)
+```
+
+Profile avatar and banner uploads accept a URL or inline `data` plus `type`:
+
+```python
+client.profile.update(auth_token="AUTH_TOKEN", name="New Name", bio="Builder")
+client.profile.avatar(
+    auth_token="AUTH_TOKEN",
+    media={"url": "https://example.com/avatar.jpg"},
+)
+client.profile.banner(
+    auth_token="AUTH_TOKEN",
+    media={"data": "BASE64_IMAGE_DATA", "type": "image/png"},
+)
+```
+
+Canonical list mutations live under `client.list`; the legacy interaction list helpers remain available:
+
+```python
+created = client.list.create(
+    auth_token="AUTH_TOKEN",
+    name="Research",
+    description="Accounts to watch",
+    is_private=True,
+)
+client.list.add_member(auth_token="AUTH_TOKEN", list_id=created["data"]["id"], user_id="123")
+client.list.remove_member(auth_token="AUTH_TOKEN", list_id=created["data"]["id"], user_id="123")
+```
+
+Community quote posts support the same URL and media attachment shapes:
+
+```python
+client.community.create_quote(
+    auth_token="AUTH_TOKEN",
+    text="Useful context",
+    attachment_url="https://x.com/user/status/123",
+    community_id="987",
+    proxy="host:port:user:pass",
+)
+client.community.create_quote_with_media(
+    auth_token="AUTH_TOKEN",
+    text="Useful context",
+    attachment_url="https://x.com/user/status/123",
+    community_id="987",
+    media=[{"media_id": "1971008286821380096"}],
+    proxy="host:port:user:pass",
+)
+```
 
 ## Auto-Pagination
 

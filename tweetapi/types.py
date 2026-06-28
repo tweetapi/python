@@ -6,7 +6,7 @@ All types mirror the API's JSON response shapes exactly.
 
 from __future__ import annotations
 
-from typing import Any, List as TypingList, Optional, TypedDict
+from typing import Any, List as TypingList, Optional, TypedDict, Union
 
 
 # ─── Response Wrappers ───────────────────────────────────────────────────────
@@ -146,6 +146,42 @@ class UserAnalytics(TypedDict, total=False):
 # ─── Media ───────────────────────────────────────────────────────────────────
 
 
+class TweetMediaIdInput(TypedDict):
+    media_id: str
+
+
+class TweetMediaUrlInputRequired(TypedDict):
+    url: str
+
+
+class TweetMediaUrlInput(TweetMediaUrlInputRequired, total=False):
+    type: str
+
+
+class TweetMediaDataInput(TypedDict):
+    data: str
+    type: str
+
+
+TweetMediaInput = Union[TweetMediaIdInput, TweetMediaUrlInput, TweetMediaDataInput]
+
+
+class ProfileMediaUrlInputRequired(TypedDict):
+    url: str
+
+
+class ProfileMediaUrlInput(ProfileMediaUrlInputRequired, total=False):
+    type: str
+
+
+class ProfileMediaDataInput(TypedDict):
+    data: str
+    type: str
+
+
+ProfileMediaInput = Union[ProfileMediaUrlInput, ProfileMediaDataInput]
+
+
 class MediaSize(TypedDict, total=False):
     width: int
     height: int
@@ -280,6 +316,27 @@ class ConversationControl(TypedDict, total=False):
     allowedUserIds: list[str]
 
 
+class ReplyOptionRequired(TypedDict):
+    mode: str
+
+
+class ReplyOption(ReplyOptionRequired, total=False):
+    regions: list[str]
+
+
+class ReactionTargetAuthor(TypedDict, total=False):
+    id: str
+    username: str
+    name: str
+
+
+class ReactionContext(TypedDict, total=False):
+    type: str
+    targetTweetId: str
+    targetTweetUrl: str
+    targetAuthor: ReactionTargetAuthor
+
+
 class Tweet(TypedDict, total=False):
     id: str
     conversationId: Optional[str]
@@ -316,6 +373,7 @@ class Tweet(TypedDict, total=False):
     hasBirdwatchNotes: bool
     birdwatchPivot: Optional[BirdwatchPivot]
     conversationControl: Optional[ConversationControl]
+    reactionContext: Optional[ReactionContext]
     isPromoted: bool
     communityId: Optional[str]
     createdAt: Optional[str]
