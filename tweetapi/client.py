@@ -78,6 +78,7 @@ class TweetAPI:
         from .resources.post import PostResource
         from .resources.interaction import InteractionResource
         from .resources.list_ import ListResource
+        from .resources.profile import ProfileResource
         from .resources.community import CommunityResource
         from .resources.space import SpaceResource
         from .resources.explore import ExploreResource
@@ -90,6 +91,7 @@ class TweetAPI:
         self.post = PostResource(self)
         self.interaction = InteractionResource(self)
         self.list = ListResource(self)
+        self.profile = ProfileResource(self)
         self.community = CommunityResource(self)
         self.space = SpaceResource(self)
         self.explore = ExploreResource(self)

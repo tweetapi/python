@@ -35,7 +35,7 @@ class TestClientInit:
     def test_all_resources_exist(self):
         client = make_client()
         for attr in ["user", "tweet", "post", "interaction", "list", "community",
-                      "space", "explore", "auth", "xchat", "dm"]:
+                      "profile", "space", "explore", "auth", "xchat", "dm"]:
             assert hasattr(client, attr), f"Missing resource: {attr}"
 
 
@@ -131,6 +131,251 @@ class TestPostRequests:
 
         body = json.loads(responses.calls[0].request.body)
         assert "disableLinkPreview" not in body
+
+    @responses.activate
+    def test_create_post_serializes_reply_option(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/interaction/create-post",
+            json={"data": {"id": "1", "action": "create_tweet", "success": True}},
+            status=200,
+        )
+
+        client = make_client()
+        client.post.create_post(
+            auth_token="auth",
+            text="Hello",
+            proxy="h:p@u:p",
+            reply_option={"mode": "followers", "regions": ["US"]},
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body["replyOption"] == {"mode": "followers", "regions": ["US"]}
+
+    @responses.activate
+    def test_create_post_with_media_preserves_media_id(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/interaction/create-post-with-media",
+            json={"data": {"id": "1", "action": "create_tweet", "success": True}},
+            status=200,
+        )
+
+        client = make_client()
+        client.post.create_post_with_media(
+            auth_token="auth",
+            text="Hello",
+            media=[{"media_id": "1971008286821380096"}],
+            proxy="h:p@u:p",
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body["media"] == [{"media_id": "1971008286821380096"}]
+
+
+class TestListParity:
+    @responses.activate
+    def test_create_sends_camel_case_body(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/list/create",
+            json={"data": {"id": "list-1", "name": "Research"}},
+            status=200,
+        )
+
+        client = make_client()
+        client.list.create(
+            auth_token="auth",
+            name="Research",
+            description="Signals",
+            is_private=False,
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "name": "Research",
+            "description": "Signals",
+            "isPrivate": False,
+        }
+
+    @responses.activate
+    def test_add_member_sends_camel_case_body_and_strips_none(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/list/add-member",
+            json={"data": {"success": True}},
+            status=200,
+        )
+
+        client = make_client()
+        client.list.add_member(auth_token="auth", list_id="list-1", user_id="user-1")
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "listId": "list-1",
+            "userId": "user-1",
+        }
+        assert "proxy" not in body
+
+    @responses.activate
+    def test_remove_member_sends_camel_case_body(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/list/remove-member",
+            json={"data": {"success": True}},
+            status=200,
+        )
+
+        client = make_client()
+        client.list.remove_member(
+            auth_token="auth",
+            list_id="list-1",
+            user_id="user-1",
+            proxy="h:p@u:p",
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "listId": "list-1",
+            "userId": "user-1",
+            "proxy": "h:p@u:p",
+        }
+
+
+class TestProfileParity:
+    @responses.activate
+    def test_update_sends_body_and_strips_none(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/profile/update",
+            json={"data": {"id": "user-1", "name": "New Name"}},
+            status=200,
+        )
+
+        client = make_client()
+        client.profile.update(
+            auth_token="auth",
+            name="New Name",
+            bio=None,
+            location="Bangkok",
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "name": "New Name",
+            "location": "Bangkok",
+        }
+        assert "bio" not in body
+        assert "website" not in body
+        assert "proxy" not in body
+
+    @responses.activate
+    def test_avatar_sends_media_body(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/profile/avatar",
+            json={"data": {"id": "user-1", "avatar": "https://example.com/a.jpg"}},
+            status=200,
+        )
+
+        client = make_client()
+        client.profile.avatar(
+            auth_token="auth",
+            media={"url": "https://example.com/a.jpg"},
+            proxy="h:p@u:p",
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "media": {"url": "https://example.com/a.jpg"},
+            "proxy": "h:p@u:p",
+        }
+
+    @responses.activate
+    def test_banner_sends_media_body(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/profile/banner",
+            json={"data": {"id": "user-1", "banner": "https://example.com/b.jpg"}},
+            status=200,
+        )
+
+        client = make_client()
+        client.profile.banner(
+            auth_token="auth",
+            media={"data": "base64", "type": "image/png"},
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "media": {"data": "base64", "type": "image/png"},
+        }
+
+
+class TestCommunityParity:
+    @responses.activate
+    def test_create_quote_sends_path_and_body(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/interaction/create-community-quote",
+            json={"data": {"id": "tweet-1", "success": True}},
+            status=200,
+        )
+
+        client = make_client()
+        client.community.create_quote(
+            auth_token="auth",
+            text="Quote",
+            attachment_url="https://x.com/user/status/1",
+            community_id="community-1",
+            proxy="h:p@u:p",
+            disable_link_preview=True,
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "text": "Quote",
+            "attachmentUrl": "https://x.com/user/status/1",
+            "communityId": "community-1",
+            "proxy": "h:p@u:p",
+            "disableLinkPreview": True,
+        }
+
+    @responses.activate
+    def test_create_quote_with_media_sends_path_and_body(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/interaction/create-community-quote-with-media",
+            json={"data": {"id": "tweet-1", "success": True}},
+            status=200,
+        )
+
+        client = make_client()
+        client.community.create_quote_with_media(
+            auth_token="auth",
+            text="Quote",
+            attachment_url="https://x.com/user/status/1",
+            community_id="community-1",
+            media=[{"media_id": "1971008286821380096"}],
+            proxy="h:p@u:p",
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "text": "Quote",
+            "attachmentUrl": "https://x.com/user/status/1",
+            "communityId": "community-1",
+            "media": [{"media_id": "1971008286821380096"}],
+            "proxy": "h:p@u:p",
+        }
 
 
 class TestErrorHandling:
