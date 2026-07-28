@@ -8,6 +8,7 @@ try:
         username="your_twitter_username",
         password="your_twitter_password",
         proxy="hostname:port@username:password",
+        country="US",
     )
 
     auth_token = login_result["data"]["cookies"]["auth_token"]

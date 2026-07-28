@@ -10,3 +10,5 @@ venv/
 .env
 .env.*
 .pytest_cache/
+.claude/
+AGENTS.md

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tweetapi"
-version = "1.2.0"
+version = "2.0.0"
 description = "Official Python SDK for TweetAPI — Twitter/X Data API for developers and researchers"
 readme = "README.md"
 license = "MIT"
@@ -52,6 +52,13 @@ Issues = "https://github.com/tweetapi/python/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tweetapi"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/tweetapi",
+    "/README.md",
+    "/pyproject.toml",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

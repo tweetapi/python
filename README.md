@@ -161,7 +161,9 @@ next_page = client.user.get_followers(
 
 | Method | Description |
 |--------|-------------|
-| `client.auth.login(username=..., password=..., proxy=...)` | Log in, get auth tokens |
+| `client.auth.login(username=..., password=..., proxy=..., country=...)` | Log in, get auth tokens |
+
+`country` is the ISO 3166-1 alpha-2 code for the proxy's public egress IP (for example, `"US"`). It must match the IP used for the complete login attempt. Pass `two_factor_secret` when the account uses TOTP-based 2FA.
 
 ### X Chat (Encrypted DMs)
 
