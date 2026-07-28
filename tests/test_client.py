@@ -133,6 +133,43 @@ class TestPostRequests:
         assert "disableLinkPreview" not in body
 
     @responses.activate
+    def test_sends_login_credentials_with_proxy_egress_country(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/auth/login",
+            json={
+                "status": "success",
+                "data": {
+                    "cookies": {
+                        "auth_token": "auth", "ct0": "csrf", "twid": "u=1",
+                        "kdt": "kdt", "__cf_bm": "cf",
+                    },
+                    "user": {"id": "1", "username": "testuser", "name": "Test User"},
+                    "timestamp": "2026-07-27T00:00:00.000Z",
+                },
+            },
+            status=200,
+        )
+
+        client = make_client()
+        client.auth.login(
+            username="testuser",
+            password="secret",
+            proxy="host:port@user:pass",
+            country="US",
+            two_factor_secret="ABCDEFGHIJKLMNOP",
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "username": "testuser",
+            "password": "secret",
+            "proxy": "host:port@user:pass",
+            "country": "US",
+            "twoFactorSecret": "ABCDEFGHIJKLMNOP",
+        }
+
+    @responses.activate
     def test_create_post_serializes_reply_option(self):
         responses.add(
             responses.POST,

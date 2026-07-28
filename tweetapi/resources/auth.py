@@ -11,9 +11,10 @@ class AuthResource:
     def __init__(self, client: TweetAPI) -> None:
         self._client = client
 
-    def login(self, *, username: str, password: str, proxy: str, two_factor_secret: Optional[str] = None) -> LoginApiResponse:
-        """Log in to a Twitter account and get auth tokens."""
+    def login(self, *, username: str, password: str, proxy: str, country: str, two_factor_secret: Optional[str] = None) -> LoginApiResponse:
+        """Log in using the proxy egress country and get auth tokens."""
         return self._client._post("/tw-v2/auth/login", {
             "username": username, "password": password,
-            "proxy": proxy, "twoFactorSecret": two_factor_secret,
+            "proxy": proxy, "country": country,
+            "twoFactorSecret": two_factor_secret,
         })
