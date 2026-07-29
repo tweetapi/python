@@ -284,6 +284,14 @@ class Place(TypedDict, total=False):
 # ─── Tweet ───────────────────────────────────────────────────────────────────
 
 
+class Article(TypedDict):
+    id: str
+    title: str
+    text: str
+    previewText: str
+    coverImageUrl: Optional[str]
+
+
 class ReplyTo(TypedDict):
     tweetId: str
     userId: str
@@ -357,6 +365,7 @@ class Tweet(TypedDict, total=False):
     media: Optional[list[Media]]
     poll: Optional[Poll]
     card: Optional[Card]
+    article: Optional[Article]
     hashtags: list[str]
     mentions: list[Mention]
     urls: list[str]
