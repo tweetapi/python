@@ -4,7 +4,7 @@ from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..client import TweetAPI
-    from ..types import ProfileMediaInput, UserResponse
+    from ..types import ProfileMediaInput, ProfilePrivacyResponse, UserResponse
 
 
 class ProfileResource:
@@ -28,4 +28,16 @@ class ProfileResource:
         """Update the authenticated user's banner."""
         return self._client._post("/tw-v2/profile/banner", {
             "authToken": auth_token, "media": media, "proxy": proxy,
+        })
+
+    def remove_banner(self, *, auth_token: str, proxy: Optional[str] = None) -> UserResponse:
+        """Remove the authenticated user's banner."""
+        return self._client._post("/tw-v2/profile/remove-banner", {
+            "authToken": auth_token, "proxy": proxy,
+        })
+
+    def set_privacy(self, *, auth_token: str, is_private: bool, proxy: Optional[str] = None) -> ProfilePrivacyResponse:
+        """Change the authenticated account between public and private."""
+        return self._client._post("/tw-v2/profile/privacy", {
+            "authToken": auth_token, "isPrivate": is_private, "proxy": proxy,
         })

@@ -354,6 +354,48 @@ class TestProfileParity:
             "media": {"data": "base64", "type": "image/png"},
         }
 
+    @responses.activate
+    def test_remove_banner_sends_body(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/profile/remove-banner",
+            json={"data": {"id": "user-1", "banner": None}},
+            status=200,
+        )
+
+        client = make_client()
+        client.profile.remove_banner(
+            auth_token="auth",
+            proxy="h:p@u:p",
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "proxy": "h:p@u:p",
+        }
+
+    @responses.activate
+    def test_set_privacy_sends_body_and_preserves_false(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/profile/privacy",
+            json={"data": {"isPrivate": False}},
+            status=200,
+        )
+
+        client = make_client()
+        client.profile.set_privacy(
+            auth_token="auth",
+            is_private=False,
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "isPrivate": False,
+        }
+
 
 class TestCommunityParity:
     @responses.activate

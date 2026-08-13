@@ -560,6 +560,14 @@ class UserResponse(TypedDict):
     data: User
 
 
+class ProfilePrivacy(TypedDict):
+    isPrivate: bool
+
+
+class ProfilePrivacyResponse(TypedDict):
+    data: ProfilePrivacy
+
+
 class UsersResponse(TypedDict):
     data: list[User]
 

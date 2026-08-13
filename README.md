@@ -97,6 +97,8 @@ next_page = client.user.get_followers(
 | `client.profile.update(auth_token=..., name=..., bio=..., location=..., website=..., proxy=...)` | Update profile fields |
 | `client.profile.avatar(auth_token=..., media=..., proxy=...)` | Update profile avatar |
 | `client.profile.banner(auth_token=..., media=..., proxy=...)` | Update profile banner |
+| `client.profile.remove_banner(auth_token=..., proxy=...)` | Remove the profile banner |
+| `client.profile.set_privacy(auth_token=..., is_private=..., proxy=...)` | Make the account public or private |
 
 ### Interaction
 
@@ -224,6 +226,8 @@ client.profile.banner(
     auth_token="AUTH_TOKEN",
     media={"data": "BASE64_IMAGE_DATA", "type": "image/png"},
 )
+client.profile.remove_banner(auth_token="AUTH_TOKEN")
+client.profile.set_privacy(auth_token="AUTH_TOKEN", is_private=True)
 ```
 
 Canonical list mutations live under `client.list`; the legacy interaction list helpers remain available:
