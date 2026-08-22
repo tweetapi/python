@@ -1,8 +1,6 @@
 # TweetAPI Python SDK
 
-Official Python SDK for [TweetAPI](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk) — the Twitter/X Data API for developers and researchers.
-
-Access tweets, user profiles, followers, analytics, and full interaction capabilities. 70+ endpoints with built-in error handling and type hints.
+`tweetapi` is the Python SDK for [TweetAPI](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk). It provides methods for users, tweets, posts, profiles, interactions, lists, communities, Spaces, search, authentication, and direct messages.
 
 ## Install
 
@@ -10,7 +8,7 @@ Access tweets, user profiles, followers, analytics, and full interaction capabil
 pip install tweetapi
 ```
 
-## Quick Start
+## Quick start
 
 ```python
 from tweetapi import TweetAPI
@@ -19,7 +17,7 @@ client = TweetAPI(api_key="YOUR_API_KEY")
 
 # Get a user profile
 user = client.user.get_by_username(username="elonmusk")
-print(user["data"]["followerCount"])  # 180000000
+print(user["data"]["followerCount"])
 
 # Search tweets
 results = client.explore.search(query="bitcoin", type="Latest")
@@ -32,21 +30,18 @@ next_page = client.user.get_followers(
 )
 ```
 
-> **Get your free API key** — [100 requests, no credit card required](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
+[Create an API key](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk) with 100 included requests. No credit card is required.
 
-## Features
+## SDK behavior
 
-- **70+ endpoints** covering users, tweets, posts, interactions, DMs, communities, spaces, and search
-- **Full type hints** with TypedDict response types for IDE autocomplete
-- **Automatic retry with backoff** on rate limits (429) and server errors (5xx)
-- **Auto-pagination helpers** — iterate all pages with a simple `for` loop
-- **Solid error handling** with typed exceptions (`RateLimitError`, `NotFoundError`, etc.)
-- **Rate limit awareness** — `retry_after` respected automatically, state exposed via `client.rate_limit_info`
-- **Split timeouts** — separate connect and read timeouts
-- **Single dependency** — `requests` only
-- **Python 3.9+** compatible
+- Public methods have type annotations, and response models use `TypedDict`.
+- The client retries rate limits, server errors, timeouts, and connection failures.
+- `paginate()` yields items from cursor-based responses; `paginate_pages()` yields full response pages.
+- HTTP errors map to exception classes such as `RateLimitError` and `NotFoundError`.
+- Timeouts can use one value or separate connect and read values.
+- The package supports Python 3.9+ and depends on `requests`.
 
-## API Reference
+## API reference
 
 ### User
 
@@ -75,7 +70,7 @@ next_page = client.user.get_followers(
 |--------|-------------|
 | `client.tweet.get_details_and_conversation(tweet_id=...)` | Get tweet details and replies |
 | `client.tweet.get_details_by_ids(ids=...)` | Get multiple tweets (max 200) |
-| `client.tweet.get_retweets(tweet_id=...)` | Get who retweeted |
+| `client.tweet.get_retweets(tweet_id=...)` | Get users who retweeted |
 | `client.tweet.get_quotes(tweet_id=...)` | Get quote tweets |
 | `client.tweet.translate(tweet_id=..., dst_lang=...)` | Translate a tweet |
 
@@ -143,8 +138,8 @@ next_page = client.user.get_followers(
 | `client.community.create_quote_with_media(...)` | Quote post with media |
 | `client.community.reply_post(...)` | Reply to community post |
 | `client.community.reply_post_with_media(...)` | Reply with media |
-| `client.community.join(auth_token=..., community_id=...)` | Join |
-| `client.community.leave(auth_token=..., community_id=...)` | Leave |
+| `client.community.join(auth_token=..., community_id=...)` | Join a community |
+| `client.community.leave(auth_token=..., community_id=...)` | Leave a community |
 
 ### Space
 
@@ -157,24 +152,24 @@ next_page = client.user.get_followers(
 
 | Method | Description |
 |--------|-------------|
-| `client.explore.search(query=..., type=...)` | Search tweets/users/photos/videos |
+| `client.explore.search(query=..., type=...)` | Search tweets, users, photos, or videos |
 
 ### Auth
 
 | Method | Description |
 |--------|-------------|
-| `client.auth.login(username=..., password=..., proxy=..., country=...)` | Log in, get auth tokens |
+| `client.auth.login(username=..., password=..., proxy=..., country=...)` | Log in and return auth tokens |
 
 `country` is the ISO 3166-1 alpha-2 code for the proxy's public egress IP (for example, `"US"`). It must match the IP used for the complete login attempt. Pass `two_factor_secret` when the account uses TOTP-based 2FA.
 
-### X Chat (Encrypted DMs)
+### X Chat (encrypted DMs)
 
 | Method | Description |
 |--------|-------------|
 | `client.xchat.setup(auth_token=..., user_id=..., pin=...)` | Initialize encrypted DMs |
 | `client.xchat.get_conversations(auth_token=...)` | List conversations |
 | `client.xchat.send(auth_token=..., recipient_id=..., message=...)` | Send message |
-| `client.xchat.get_history(auth_token=..., conversation_id=...)` | Get history |
+| `client.xchat.get_history(auth_token=..., conversation_id=...)` | Get conversation history |
 | `client.xchat.can_dm(auth_token=..., user_ids=...)` | Check DM availability |
 
 ### Unencrypted DMs
@@ -184,13 +179,13 @@ next_page = client.user.get_followers(
 | `client.dm.send_dm(auth_token=..., conversation_id=..., text=..., proxy=...)` | Send DM |
 | `client.dm.get_dm_permissions(auth_token=..., recipient_ids=...)` | Check permissions |
 | `client.dm.get_inbox_initial_state(auth_token=...)` | Get inbox state |
-| `client.dm.get_inbox_trusted(auth_token=..., cursor=...)` | Trusted inbox |
-| `client.dm.get_inbox_untrusted(auth_token=..., cursor=...)` | Message requests |
+| `client.dm.get_inbox_trusted(auth_token=..., cursor=...)` | Get the trusted inbox |
+| `client.dm.get_inbox_untrusted(auth_token=..., cursor=...)` | Get message requests |
 | `client.dm.get_conversation(auth_token=..., conversation_id=...)` | Get messages |
-| `client.dm.get_dm_user_updates(auth_token=..., cursor=...)` | DM user updates |
-| `client.dm.accept_conversation(auth_token=..., conversation_id=...)` | Accept request |
+| `client.dm.get_dm_user_updates(auth_token=..., cursor=...)` | Get DM user updates |
+| `client.dm.accept_conversation(auth_token=..., conversation_id=...)` | Accept a conversation request |
 
-## Posting and Profile Media
+## Posting and profile media
 
 Tweet media accepts an existing TweetAPI media ID, a URL, or inline base64 data:
 
@@ -230,7 +225,7 @@ client.profile.remove_banner(auth_token="AUTH_TOKEN")
 client.profile.set_privacy(auth_token="AUTH_TOKEN", is_private=True)
 ```
 
-Canonical list mutations live under `client.list`; the legacy interaction list helpers remain available:
+Use `client.list` for list mutations. The older helpers under `client.interaction` remain available:
 
 ```python
 created = client.list.create(
@@ -263,9 +258,9 @@ client.community.create_quote_with_media(
 )
 ```
 
-## Auto-Pagination
+## Pagination
 
-Use the `paginate()` and `paginate_pages()` helpers to iterate through all pages automatically:
+`paginate()` yields individual items. `paginate_pages()` yields each full response page:
 
 ```python
 from tweetapi import TweetAPI, paginate, paginate_pages
@@ -287,18 +282,16 @@ for page in paginate_pages(
     print(f"Next cursor: {page['pagination']['nextCursor']}")
 ```
 
-Works with any paginated endpoint — followers, tweets, search results, list members, community posts, etc.
+Each helper accepts a callable that takes a cursor and returns a response with `data` and `pagination.nextCursor`. Use `max_pages` to limit the number of fetched pages.
 
-## Automatic Retry with Backoff
+## Retries
 
-The SDK automatically retries on transient errors with exponential backoff:
+The client retries these transient failures:
 
-- **429 (Rate Limit)** — waits the `retry_after` duration from the API, then retries
-- **5xx (Server Error)** — retries with exponential backoff + jitter
-- **Network errors** — retries on timeouts and connection failures
-- **4xx (Client Error)** — never retried (400, 401, 403, 404 fail immediately)
+- For a 429 response, it waits for `RateLimitError.retry_after` seconds, up to `max_retry_delay`.
+- For a 5xx response, timeout, or connection failure, it uses exponential backoff with up to 25% jitter.
 
-Default: 3 retries, 2x backoff, 1s initial delay, 30s max delay.
+By default, the client makes up to 3 retries. Its base delay starts at 1 second, doubles after each attempt, and is capped at 30 seconds. Other 4xx responses are not retried.
 
 ```python
 # Customize retry behavior
@@ -314,18 +307,17 @@ client = TweetAPI(
 client = TweetAPI(api_key="YOUR_API_KEY", max_retries=0)
 ```
 
-### Rate Limit Awareness
+### Rate-limit state
 
-After a 429 response, the SDK exposes the last known rate limit state:
+After a 429 response, `client.rate_limit_info` records the retry delay and the time the response was received:
 
 ```python
 print(client.rate_limit_info)
-# {"retry_after": 30, "timestamp": 1712345678.0} — or None if no 429 encountered
 ```
 
-## Error Handling
+## Error handling
 
-The SDK raises typed exceptions you can catch and handle. With automatic retries enabled (default), you'll only see these after all retry attempts are exhausted:
+The client raises retryable errors after it exhausts the configured retries. It raises other errors from the first response:
 
 ```python
 from tweetapi import (
@@ -359,11 +351,12 @@ except TweetAPIError as e:
     print(f"Error [{e.code}]: {e.message}")
 ```
 
-Every error includes:
-- `code` — API error code (e.g., `"ACCOUNT_SUSPENDED"`, `"RATE_LIMIT"`)
-- `status_code` — HTTP status code
-- `message` — Human-readable error message
-- `details` — Additional context (field, reason, retry_after, etc.)
+Every error includes these attributes:
+
+- `code`: API error code, such as `"ACCOUNT_SUSPENDED"` or `"RATE_LIMIT"`
+- `status_code`: HTTP status code
+- `message`: human-readable error message
+- `details`: response context such as a field, reason, or retry delay
 
 ## Configuration
 
@@ -371,7 +364,7 @@ Every error includes:
 client = TweetAPI(
     api_key="YOUR_API_KEY",           # Required
     base_url="https://...",           # Optional (default: https://api.tweetapi.com)
-    timeout=30,                       # Optional — single value for both connect + read
+    timeout=30,                       # Optional; one value for connect and read
     connect_timeout=10.0,             # Optional (default: 10s)
     read_timeout=30.0,                # Optional (default: 30s)
     max_retries=3,                    # Optional (default: 3, set 0 to disable)
@@ -391,8 +384,8 @@ client = TweetAPI(api_key="YOUR_API_KEY", timeout=(5, 30))  # (connect, read)
 
 ## Links
 
-- [Full Documentation](https://tweetapi.com/docs?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
-- [Get API Key (Free)](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
+- [Documentation](https://tweetapi.com/docs?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
+- [Create an API key](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
 - [Dashboard](https://tweetapi.com/dashboard?utm_source=github&utm_medium=readme&utm_campaign=python-sdk)
 - [Node.js SDK](https://github.com/tweetapi/node)
 
@@ -400,6 +393,4 @@ client = TweetAPI(api_key="YOUR_API_KEY", timeout=(5, 30))  # (connect, read)
 
 MIT
 
----
-
-*TweetAPI is a third-party service and is not affiliated with X Corp.*
+TweetAPI is a third-party service and is not affiliated with X Corp.
