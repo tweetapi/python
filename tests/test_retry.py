@@ -125,6 +125,32 @@ class TestRetryDisabled:
             client.user.get_by_username(username="test")
         assert len(responses.calls) == 1
 
+    @responses.activate
+    def test_update_username_does_not_retry_transient_failure(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/profile/username",
+            json={"error": {"code": "SERVER_ERROR", "message": "fail", "details": None}},
+            status=500,
+        )
+        queued_success = responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/profile/username",
+            json={"data": {"username": "new_username"}},
+            status=200,
+        )
+
+        client = make_client(max_retries=3)
+        with pytest.raises(ServerError):
+            client.profile.update_username(
+                auth_token="auth",
+                password="password",
+                username="new_username",
+            )
+
+        assert len(responses.calls) == 1
+        assert queued_success.call_count == 0
+
 
 class TestRateLimitInfo:
     @responses.activate

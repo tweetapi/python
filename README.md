@@ -35,7 +35,7 @@ next_page = client.user.get_followers(
 ## SDK behavior
 
 - Public methods have type annotations, and response models use `TypedDict`.
-- The client retries rate limits, server errors, timeouts, and connection failures.
+- The client retries rate limits, server errors, timeouts, and connection failures by default; username changes disable automatic retries because the mutation is non-idempotent.
 - `paginate()` yields items from cursor-based responses; `paginate_pages()` yields full response pages.
 - HTTP errors map to exception classes such as `RateLimitError` and `NotFoundError`.
 - Timeouts can use one value or separate connect and read values.
@@ -94,6 +94,7 @@ next_page = client.user.get_followers(
 | `client.profile.banner(auth_token=..., media=..., proxy=...)` | Update profile banner |
 | `client.profile.remove_banner(auth_token=..., proxy=...)` | Remove the profile banner |
 | `client.profile.set_privacy(auth_token=..., is_private=..., proxy=...)` | Make the account public or private |
+| `client.profile.update_username(auth_token=..., password=..., username=..., proxy=...)` | Update the account username |
 
 ### Interaction
 
@@ -223,6 +224,11 @@ client.profile.banner(
 )
 client.profile.remove_banner(auth_token="AUTH_TOKEN")
 client.profile.set_privacy(auth_token="AUTH_TOKEN", is_private=True)
+client.profile.update_username(
+    auth_token="AUTH_TOKEN",
+    password="ACCOUNT_PASSWORD",
+    username="NEW_USERNAME",
+)
 ```
 
 Use `client.list` for list mutations. The older helpers under `client.interaction` remain available:

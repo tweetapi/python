@@ -108,12 +108,18 @@ class TweetAPI:
             }
         return self._request("GET", path, params=clean_params)
 
-    def _post(self, path: str, body: Optional[dict[str, Any]] = None) -> Any:
+    def _post(
+        self,
+        path: str,
+        body: Optional[dict[str, Any]] = None,
+        *,
+        retry: bool = True,
+    ) -> Any:
         """Send a POST request to the API."""
         clean_body = None
         if body:
             clean_body = {k: v for k, v in body.items() if v is not None}
-        return self._request("POST", path, json=clean_body)
+        return self._request("POST", path, json=clean_body, retry=retry)
 
     @property
     def rate_limit_info(self) -> Optional[dict[str, Any]]:
@@ -146,11 +152,13 @@ class TweetAPI:
         path: str,
         params: Optional[dict[str, Any]] = None,
         json: Optional[dict[str, Any]] = None,
+        retry: bool = True,
     ) -> Any:
         url = f"{self._base_url}{path}"
         last_error: Optional[TweetAPIError] = None
+        max_retries = self._max_retries if retry else 0
 
-        for attempt in range(self._max_retries + 1):
+        for attempt in range(max_retries + 1):
             try:
                 response = self._session.request(
                     method,
@@ -163,19 +171,19 @@ class TweetAPI:
                 last_error = ConnectionError_(
                     f"Request timed out ({self._timeout_desc})", e
                 )
-                if attempt < self._max_retries:
+                if attempt < max_retries:
                     time.sleep(self._calculate_retry_delay(last_error, attempt))
                     continue
                 raise last_error from e
             except requests.exceptions.ConnectionError as e:
                 last_error = ConnectionError_(f"Network error: {e}", e)
-                if attempt < self._max_retries:
+                if attempt < max_retries:
                     time.sleep(self._calculate_retry_delay(last_error, attempt))
                     continue
                 raise last_error from e
             except requests.exceptions.RequestException as e:
                 last_error = ConnectionError_(f"Request failed: {e}", e)
-                if attempt < self._max_retries:
+                if attempt < max_retries:
                     time.sleep(self._calculate_retry_delay(last_error, attempt))
                     continue
                 raise last_error from e
@@ -190,7 +198,7 @@ class TweetAPI:
                             "retry_after": err.retry_after,
                             "timestamp": time.time(),
                         }
-                    if attempt < self._max_retries and self._is_retryable(err):
+                    if attempt < max_retries and self._is_retryable(err):
                         time.sleep(self._calculate_retry_delay(err, attempt))
                         continue
                     raise

@@ -396,6 +396,31 @@ class TestProfileParity:
             "isPrivate": False,
         }
 
+    @responses.activate
+    def test_update_username_sends_required_body_and_strips_none_proxy(self):
+        responses.add(
+            responses.POST,
+            f"{BASE_URL}/tw-v2/profile/username",
+            json={"data": {"username": "new_username"}},
+            status=200,
+        )
+
+        client = make_client()
+        client.profile.update_username(
+            auth_token="auth",
+            password="password",
+            username="new_username",
+            proxy=None,
+        )
+
+        body = json.loads(responses.calls[0].request.body)
+        assert body == {
+            "authToken": "auth",
+            "password": "password",
+            "username": "new_username",
+        }
+        assert "proxy" not in body
+
 
 class TestCommunityParity:
     @responses.activate
