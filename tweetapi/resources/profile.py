@@ -4,7 +4,12 @@ from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..client import TweetAPI
-    from ..types import ProfileMediaInput, ProfilePrivacyResponse, UserResponse
+    from ..types import (
+        ProfileMediaInput,
+        ProfilePrivacyResponse,
+        ProfileUsernameResponse,
+        UserResponse,
+    )
 
 
 class ProfileResource:
@@ -41,3 +46,12 @@ class ProfileResource:
         return self._client._post("/tw-v2/profile/privacy", {
             "authToken": auth_token, "isPrivate": is_private, "proxy": proxy,
         })
+
+    def update_username(self, *, auth_token: str, password: str, username: str, proxy: Optional[str] = None) -> ProfileUsernameResponse:
+        """Update the authenticated account's username."""
+        return self._client._post("/tw-v2/profile/username", {
+            "authToken": auth_token,
+            "password": password,
+            "username": username,
+            "proxy": proxy,
+        }, retry=False)

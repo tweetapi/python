@@ -568,6 +568,14 @@ class ProfilePrivacyResponse(TypedDict):
     data: ProfilePrivacy
 
 
+class ProfileUsername(TypedDict):
+    username: str
+
+
+class ProfileUsernameResponse(TypedDict):
+    data: ProfileUsername
+
+
 class UsersResponse(TypedDict):
     data: list[User]
 
