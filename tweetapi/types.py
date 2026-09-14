@@ -585,6 +585,11 @@ class UserPaginatedResponse(TypedDict):
     pagination: Pagination
 
 
+class FollowRequestsResponse(TypedDict):
+    data: list[str]
+    pagination: Pagination
+
+
 class TweetResponse(TypedDict):
     data: Tweet
 
