@@ -218,11 +218,14 @@ class TweetAPI:
         message = f"HTTP {response.status_code}"
         details = None
 
-        if body and isinstance(body.get("error"), dict):
+        if isinstance(body, dict) and isinstance(body.get("error"), dict):
             error = body["error"]
             code = error.get("code", code)
             message = error.get("message", message)
             details = error.get("details")
+        elif isinstance(body, dict) and isinstance(body.get("message"), str):
+            # /tw-v2 uses {statusCode, message}; only /v3 supplies error codes.
+            message = body["message"]
 
         status = response.status_code
 

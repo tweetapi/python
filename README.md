@@ -35,7 +35,7 @@ next_page = client.user.get_followers(
 ## SDK behavior
 
 - Public methods have type annotations, and response models use `TypedDict`.
-- The client retries rate limits, server errors, timeouts, and connection failures by default; username changes disable automatic retries because the mutation is non-idempotent.
+- The client retries rate limits, server errors, timeouts, and connection failures by default. Username changes and accepting or denying follow requests disable automatic retries.
 - `paginate()` yields items from cursor-based responses; `paginate_pages()` yields full response pages.
 - HTTP errors map to exception classes such as `RateLimitError` and `NotFoundError`.
 - Timeouts can use one value or separate connect and read values.
@@ -108,10 +108,50 @@ next_page = client.user.get_followers(
 | `client.interaction.delete_bookmark(auth_token=..., tweet_id=...)` | Remove bookmark |
 | `client.interaction.follow(auth_token=..., user_id=...)` | Follow a user |
 | `client.interaction.unfollow(auth_token=..., user_id=...)` | Unfollow a user |
+| `client.interaction.get_follow_requests(auth_token=..., proxy=..., cursor=..., count=...)` | List pending follow requester IDs |
+| `client.interaction.accept_follow_request(auth_token=..., user_id=..., proxy=...)` | Accept one pending follow request |
+| `client.interaction.deny_follow_request(auth_token=..., user_id=..., proxy=...)` | Deny one pending follow request |
 | `client.interaction.add_member_to_list(auth_token=..., list_id=..., user_id=...)` | Add to list |
 | `client.interaction.remove_member_from_list(auth_token=..., list_id=..., user_id=...)` | Remove from list |
 | `client.interaction.get_notifications(auth_token=...)` | Get notifications |
 | `client.interaction.get_user_analytics(auth_token=...)` | Get analytics |
+
+#### Review follow requests
+
+The supplied `auth_token` determines whose pending requests you can review. Listing returns `data` as a list of digit strings and `pagination` with `nextCursor` and `prevCursor`. IDs retain their full precision; the response includes no profiles or total count. An empty list is valid, and terminal cursors are `None`.
+
+```python
+requests_page = client.interaction.get_follow_requests(auth_token="AUTH_TOKEN")
+print(requests_page["data"])
+
+next_cursor = requests_page["pagination"]["nextCursor"]
+if next_cursor is not None:
+    next_page = client.interaction.get_follow_requests(
+        auth_token="AUTH_TOKEN", cursor=next_cursor, count=100,
+    )
+```
+
+Omit `cursor` and `count` (or pass `None`) to use the server defaults of `"-1"` and `100`. When supplied, `count` must be an integer from 1 to 100. Each method accepts an optional `proxy` in `host:port@user:pass` format.
+
+After reviewing the IDs, select one request and choose an action:
+
+```python
+selected_user_id = "9007199254740993123"  # A requester ID you reviewed
+decision = "accept"  # Choose "accept" or "deny"
+
+if decision == "accept":
+    result = client.interaction.accept_follow_request(
+        auth_token="AUTH_TOKEN", user_id=selected_user_id,
+    )
+elif decision == "deny":
+    result = client.interaction.deny_follow_request(
+        auth_token="AUTH_TOKEN", user_id=selected_user_id,
+    )
+```
+
+Pass `user_id` as a digit-only string, not a username. Successful actions return `data.id`, `data.action` (`"accept_follow_request"` or `"deny_follow_request"`), `data.timestamp`, `data.success`, and `data.metadata.user_id`.
+
+These actions are not guaranteed to be idempotent and are never retried automatically. A timeout leaves the outcome uncertain: check the pending requests and account state before deciding whether to retry manually. Listing keeps the client's normal retry behavior and works with `paginate()` and `paginate_pages()`.
 
 ### List
 
@@ -299,6 +339,8 @@ The client retries these transient failures:
 
 By default, the client makes up to 3 retries. Its base delay starts at 1 second, doubles after each attempt, and is capped at 30 seconds. Other 4xx responses are not retried.
 
+Username changes and accepting or denying follow requests make one attempt regardless of `max_retries`.
+
 ```python
 # Customize retry behavior
 client = TweetAPI(
@@ -359,7 +401,7 @@ except TweetAPIError as e:
 
 Every error includes these attributes:
 
-- `code`: API error code, such as `"ACCOUNT_SUSPENDED"` or `"RATE_LIMIT"`
+- `code`: API error code when supplied, or `"UNKNOWN_ERROR"` for the `/tw-v2` `{statusCode, message}` error format
 - `status_code`: HTTP status code
 - `message`: human-readable error message
 - `details`: response context such as a field, reason, or retry delay

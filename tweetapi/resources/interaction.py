@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from ..client import TweetAPI
     from ..types import (
         ActionResponse,
+        FollowRequestsResponse,
         NotificationPaginatedResponse,
         UserAnalyticsResponse,
     )
@@ -62,6 +63,36 @@ class InteractionResource:
         return self._client._post("/tw-v2/interaction/unfollow", {
             "authToken": auth_token, "userId": user_id, "proxy": proxy,
         })
+
+    def get_follow_requests(self, *, auth_token: str, proxy: Optional[str] = None, cursor: Optional[str] = None, count: Optional[int] = None) -> FollowRequestsResponse:
+        """List pending requester IDs for the supplied session's account.
+
+        Omit cursor/count for server defaults ("-1"/100). Count must be an
+        integer from 1 to 100. Terminal cursors are returned as None.
+        """
+        return self._client._get("/tw-v2/interaction/follow-requests", {
+            "authToken": auth_token, "proxy": proxy, "cursor": cursor, "count": count,
+        })
+
+    def accept_follow_request(self, *, auth_token: str, user_id: str, proxy: Optional[str] = None) -> ActionResponse:
+        """Accept a pending request from a digit-only user ID string.
+
+        Automatic retries are disabled. A timeout leaves the outcome uncertain;
+        reconcile the account state before retrying manually.
+        """
+        return self._client._post("/tw-v2/interaction/accept-follow-request", {
+            "authToken": auth_token, "userId": user_id, "proxy": proxy,
+        }, retry=False)
+
+    def deny_follow_request(self, *, auth_token: str, user_id: str, proxy: Optional[str] = None) -> ActionResponse:
+        """Deny a pending request from a digit-only user ID string.
+
+        Automatic retries are disabled. A timeout leaves the outcome uncertain;
+        reconcile the account state before retrying manually.
+        """
+        return self._client._post("/tw-v2/interaction/deny-follow-request", {
+            "authToken": auth_token, "userId": user_id, "proxy": proxy,
+        }, retry=False)
 
     def add_member_to_list(self, *, auth_token: str, list_id: str, user_id: str, proxy: Optional[str] = None) -> ActionResponse:
         """Add a user to a list."""
