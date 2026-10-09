@@ -5,8 +5,10 @@ import responses
 
 from tweetapi import (
     TweetAPI,
+    ErrorCode,
     TweetAPIError,
     AuthenticationError,
+    ForbiddenError,
     ValidationError,
     NotFoundError,
     RateLimitError,
@@ -589,6 +591,40 @@ class TestErrorHandling:
             client.user.get_by_username(username="suspended")
 
         assert exc_info.value.code == "ACCOUNT_SUSPENDED"
+
+    @responses.activate
+    def test_reads_code_from_the_tw_v2_error_envelope(self):
+        responses.add(
+            responses.GET,
+            f"{BASE_URL}/tw-v2/user/by-username",
+            json={"statusCode": 403, "message": "This account has been locked", "code": "ACCOUNT_LOCKED"},
+            status=403,
+        )
+
+        client = make_client()
+        with pytest.raises(ForbiddenError) as exc_info:
+            client.user.get_by_username(username="test")
+
+        assert exc_info.value.code == ErrorCode.ACCOUNT_LOCKED
+        assert exc_info.value.message == "This account has been locked"
+
+    @responses.activate
+    def test_exposes_the_retry_after_header_as_retry_after(self):
+        responses.add(
+            responses.GET,
+            f"{BASE_URL}/tw-v2/user/by-username",
+            json={"statusCode": 429, "message": "Rate limit quota exceeded", "code": "RATE_LIMITED"},
+            status=429,
+            headers={"Retry-After": "17"},
+        )
+
+        client = make_client()
+        with pytest.raises(RateLimitError) as exc_info:
+            client.user.get_by_username(username="test")
+
+        assert exc_info.value.code == ErrorCode.RATE_LIMITED
+        assert exc_info.value.retry_after == 17
+        assert exc_info.value.details == {"retryAfter": 17}
 
     def test_network_error_on_connection_failure(self):
         client = TweetAPI(api_key="key", base_url="http://localhost:1", max_retries=0)

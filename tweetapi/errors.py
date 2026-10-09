@@ -3,6 +3,42 @@ from __future__ import annotations
 from typing import Any, Optional
 
 
+class ErrorCode:
+    """Error codes the API returns in ``TweetAPIError.code``.
+
+    Errors without a specific code use ``UNKNOWN_ERROR``; newer API versions may add codes.
+    """
+
+    RATE_LIMITED = "RATE_LIMITED"
+    """Per-minute limit reached. ``RateLimitError.retry_after`` says when it resets."""
+    QUOTA_EXHAUSTED = "QUOTA_EXHAUSTED"
+    """Plan allowance or prepaid balance used up. Retrying does not help."""
+    SUBSCRIPTION_INACTIVE = "SUBSCRIPTION_INACTIVE"
+    """Plan expired or inactive. Retrying does not help."""
+    ACCOUNT_SUSPENDED = "ACCOUNT_SUSPENDED"
+    """The Twitter account behind ``auth_token`` is suspended."""
+    ACCOUNT_LOCKED = "ACCOUNT_LOCKED"
+    """The Twitter account behind ``auth_token`` is locked."""
+    PROXY_ERROR = "PROXY_ERROR"
+    """Your ``proxy`` refused or could not be reached."""
+    PROXY_TIMEOUT = "PROXY_TIMEOUT"
+    """Your ``proxy`` timed out."""
+    INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
+    """Login: wrong username or password."""
+    TWO_FACTOR_REQUIRED = "TWO_FACTOR_REQUIRED"
+    """Login: the account needs ``two_factor_secret``."""
+    INVALID_TWO_FACTOR_CODE = "INVALID_TWO_FACTOR_CODE"
+    """Login: the two-factor code was rejected."""
+    EMAIL_VERIFICATION_REQUIRED = "EMAIL_VERIFICATION_REQUIRED"
+    """Login: the account must verify its email first."""
+    LOGIN_RUNTIME_UNAVAILABLE = "LOGIN_RUNTIME_UNAVAILABLE"
+    """Login: X could not be reached; try again later."""
+    CONNECTION_ERROR = "CONNECTION_ERROR"
+    """No response was received (network failure or timeout)."""
+    UNKNOWN_ERROR = "UNKNOWN_ERROR"
+    """The response did not include a specific code."""
+
+
 class TweetAPIError(Exception):
     """Base error for all TweetAPI errors.
 
@@ -78,9 +114,11 @@ class ValidationError(TweetAPIError):
 
 
 class RateLimitError(TweetAPIError):
-    """Thrown when you've exceeded rate limits (HTTP 429).
+    """Thrown on HTTP 429.
 
-    Check ``retry_after`` for seconds until you can retry.
+    Check ``code``: ``RATE_LIMITED`` clears after ``retry_after`` seconds, while
+    ``QUOTA_EXHAUSTED`` and ``SUBSCRIPTION_INACTIVE`` need a plan change.
+    ``retry_after`` is the API's ``Retry-After``, or 60 when it sends none.
     """
 
     def __init__(
@@ -114,7 +152,7 @@ class ConnectionError_(TweetAPIError):
     """
 
     def __init__(self, message: str, cause: Optional[Exception] = None) -> None:
-        super().__init__(message, "CONNECTION_ERROR", 0, None)
+        super().__init__(message, ErrorCode.CONNECTION_ERROR, 0, None)
         self.__cause__ = cause
 
 

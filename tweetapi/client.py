@@ -7,6 +7,7 @@ from typing import Any, Optional, Union
 import requests
 
 from .errors import (
+    ErrorCode,
     TweetAPIError,
     AuthenticationError,
     ForbiddenError,
@@ -16,6 +17,21 @@ from .errors import (
     ServerError,
     ConnectionError_,
 )
+
+# Repeating the request cannot succeed: the caller's proxy is down, or the plan is
+# used up or expired.
+_NON_RETRYABLE_CODES = frozenset({
+    ErrorCode.PROXY_ERROR,
+    ErrorCode.PROXY_TIMEOUT,
+    ErrorCode.QUOTA_EXHAUSTED,
+    ErrorCode.SUBSCRIPTION_INACTIVE,
+})
+
+
+def _parse_retry_after(value: Optional[str]) -> Optional[int]:
+    """``Retry-After`` in seconds; the API only sends the delta-seconds form."""
+    seconds = (value or "").strip()
+    return int(seconds) if seconds.isascii() and seconds.isdigit() else None
 
 
 class TweetAPI:
@@ -106,7 +122,7 @@ class TweetAPI:
             clean_params = {
                 k: v for k, v in params.items() if v is not None
             }
-        return self._request("GET", path, params=clean_params)
+        return self._request("GET", path, params=clean_params, read=True)
 
     def _post(
         self,
@@ -114,12 +130,17 @@ class TweetAPI:
         body: Optional[dict[str, Any]] = None,
         *,
         retry: bool = True,
+        read: bool = False,
     ) -> Any:
-        """Send a POST request to the API."""
+        """Send a POST request to the API.
+
+        It counts as a write unless ``read`` is set, so it is only retried when the
+        API sends ``Retry-After``.
+        """
         clean_body = None
         if body:
             clean_body = {k: v for k, v in body.items() if v is not None}
-        return self._request("POST", path, json=clean_body, retry=retry)
+        return self._request("POST", path, json=clean_body, retry=retry, read=read)
 
     @property
     def rate_limit_info(self) -> Optional[dict[str, Any]]:
@@ -134,14 +155,27 @@ class TweetAPI:
             return f"connect={self._timeout[0]}s, read={self._timeout[1]}s"
         return f"{self._timeout}s"
 
-    def _is_retryable(self, error: TweetAPIError) -> bool:
+    def _is_retryable(self, error: TweetAPIError, read: bool) -> bool:
+        if error.code in _NON_RETRYABLE_CODES:
+            return False
+        # The API sends Retry-After only before the request reaches X, so even a
+        # write is safe to repeat.
+        if error.status_code in (429, 503) and "retryAfter" in (error.details or {}):
+            return True
+        # A failed write may still have gone through; repeating it could post twice.
+        if not read:
+            return False
         if isinstance(error, ConnectionError_):
             return True
         return error.status_code == 429 or error.status_code >= 500
 
     def _calculate_retry_delay(self, error: Optional[TweetAPIError], attempt: int) -> float:
-        if isinstance(error, RateLimitError) and error.retry_after > 0:
-            return min(float(error.retry_after), self._max_retry_delay)
+        if isinstance(error, RateLimitError):
+            retry_after = error.retry_after
+        else:
+            retry_after = ((error.details if error else None) or {}).get("retryAfter")
+        if retry_after is not None and retry_after > 0:
+            return min(float(retry_after), self._max_retry_delay)
         base = self._initial_retry_delay * (self._backoff_multiplier ** attempt)
         capped = min(base, self._max_retry_delay)
         return capped + random.random() * capped * 0.25
@@ -153,6 +187,7 @@ class TweetAPI:
         params: Optional[dict[str, Any]] = None,
         json: Optional[dict[str, Any]] = None,
         retry: bool = True,
+        read: bool = False,
     ) -> Any:
         url = f"{self._base_url}{path}"
         last_error: Optional[TweetAPIError] = None
@@ -171,19 +206,19 @@ class TweetAPI:
                 last_error = ConnectionError_(
                     f"Request timed out ({self._timeout_desc})", e
                 )
-                if attempt < max_retries:
+                if attempt < max_retries and self._is_retryable(last_error, read):
                     time.sleep(self._calculate_retry_delay(last_error, attempt))
                     continue
                 raise last_error from e
             except requests.exceptions.ConnectionError as e:
                 last_error = ConnectionError_(f"Network error: {e}", e)
-                if attempt < max_retries:
+                if attempt < max_retries and self._is_retryable(last_error, read):
                     time.sleep(self._calculate_retry_delay(last_error, attempt))
                     continue
                 raise last_error from e
             except requests.exceptions.RequestException as e:
                 last_error = ConnectionError_(f"Request failed: {e}", e)
-                if attempt < max_retries:
+                if attempt < max_retries and self._is_retryable(last_error, read):
                     time.sleep(self._calculate_retry_delay(last_error, attempt))
                     continue
                 raise last_error from e
@@ -198,7 +233,7 @@ class TweetAPI:
                             "retry_after": err.retry_after,
                             "timestamp": time.time(),
                         }
-                    if attempt < max_retries and self._is_retryable(err):
+                    if attempt < max_retries and self._is_retryable(err, read):
                         time.sleep(self._calculate_retry_delay(err, attempt))
                         continue
                     raise
@@ -214,7 +249,7 @@ class TweetAPI:
         except (ValueError, requests.exceptions.JSONDecodeError):
             body = None
 
-        code = "UNKNOWN_ERROR"
+        code = ErrorCode.UNKNOWN_ERROR
         message = f"HTTP {response.status_code}"
         details = None
 
@@ -223,9 +258,16 @@ class TweetAPI:
             code = error.get("code", code)
             message = error.get("message", message)
             details = error.get("details")
-        elif isinstance(body, dict) and isinstance(body.get("message"), str):
-            # /tw-v2 uses {statusCode, message}; only /v3 supplies error codes.
-            message = body["message"]
+        elif isinstance(body, dict):
+            # /tw-v2 sends {statusCode, message, code?}; /v3 nests the error.
+            if isinstance(body.get("message"), str):
+                message = body["message"]
+            if isinstance(body.get("code"), str):
+                code = body["code"]
+
+        retry_after = _parse_retry_after(response.headers.get("Retry-After"))
+        if retry_after is not None and "retryAfter" not in (details or {}):
+            details = {**(details or {}), "retryAfter": retry_after}
 
         status = response.status_code
 
