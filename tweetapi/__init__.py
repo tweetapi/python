@@ -12,6 +12,7 @@ Usage::
 
 from .client import TweetAPI
 from .errors import (
+    ErrorCode,
     TweetAPIError,
     AuthenticationError,
     ForbiddenError,
@@ -25,6 +26,7 @@ from .pagination import paginate, paginate_pages
 
 __all__ = [
     "TweetAPI",
+    "ErrorCode",
     "TweetAPIError",
     "AuthenticationError",
     "ForbiddenError",
@@ -37,4 +39,4 @@ __all__ = [
     "paginate_pages",
 ]
 
-__version__ = "2.4.0"
+__version__ = "2.5.0"
