@@ -7,6 +7,7 @@ import responses
 
 from tweetapi import (
     TweetAPI,
+    TweetAPIError,
     RateLimitError,
     ServerError,
     NetworkError,
@@ -172,3 +173,101 @@ class TestRateLimitInfo:
         assert client.rate_limit_info is not None
         assert client.rate_limit_info["retry_after"] == 30
         assert client.rate_limit_info["timestamp"] > 0
+
+
+USER_URL = f"{BASE_URL}/tw-v2/user/by-username"
+POST_URL = f"{BASE_URL}/tw-v2/interaction/create-post"
+POST_PARAMS = {"auth_token": "AUTH_TOKEN", "text": "hello", "proxy": "host:8080@user:pass"}
+
+
+def v2_error(status, code=None, headers=None):
+    """The /tw-v2 error envelope, with optional response headers."""
+    body = {"statusCode": status, "message": "synthetic"}
+    if code:
+        body["code"] = code
+    return {"json": body, "status": status, "headers": headers or {}}
+
+
+class TestRetryRules:
+    @responses.activate
+    def test_no_retry_when_the_callers_proxy_failed(self):
+        for status, code in [(502, "PROXY_ERROR"), (504, "PROXY_TIMEOUT")]:
+            responses.reset()
+            responses.add(responses.GET, USER_URL, **v2_error(status, code))
+            with pytest.raises(ServerError) as exc_info:
+                make_client(max_retries=3).user.get_by_username(username="test")
+            assert exc_info.value.code == code
+            assert len(responses.calls) == 1
+
+    @responses.activate
+    def test_no_retry_for_a_used_up_or_expired_plan(self):
+        for code in ["QUOTA_EXHAUSTED", "SUBSCRIPTION_INACTIVE"]:
+            responses.reset()
+            responses.add(responses.GET, USER_URL, **v2_error(429, code))
+            with pytest.raises(RateLimitError) as exc_info:
+                make_client(max_retries=3).user.get_by_username(username="test")
+            assert exc_info.value.code == code
+            assert len(responses.calls) == 1
+
+    @responses.activate
+    def test_waits_for_retry_after_before_retrying(self):
+        for status, code in [(429, "RATE_LIMITED"), (503, None)]:
+            responses.reset()
+            responses.add(responses.GET, USER_URL, **v2_error(status, code, {"Retry-After": "2"}))
+            responses.add(responses.GET, USER_URL, json={"data": {"id": "1"}}, status=200)
+            client = make_client(max_retries=1, max_retry_delay=5.0)
+            with patch("tweetapi.client.time.sleep") as mock_sleep:
+                client.user.get_by_username(username="test")
+            assert len(responses.calls) == 2
+            mock_sleep.assert_called_once_with(2.0)
+
+    @responses.activate
+    def test_still_retries_a_429_without_a_code_as_older_api_versions_send(self):
+        responses.add(responses.GET, USER_URL, **v2_error(429))
+        responses.add(responses.GET, USER_URL, json={"data": {"id": "1"}}, status=200)
+
+        make_client(max_retries=1).user.get_by_username(username="test")
+        assert len(responses.calls) == 2
+
+    @responses.activate
+    def test_does_not_repeat_a_write_after_a_failure_that_may_have_gone_through(self):
+        import requests as req
+        failures = [v2_error(status) for status in (500, 502, 503, 504)] + [
+            {"body": req.exceptions.ConnectionError("connection reset")},
+            {"body": req.exceptions.ReadTimeout("read timed out")},
+        ]
+        for failure in failures:
+            responses.reset()
+            responses.add(responses.POST, POST_URL, **failure)
+            responses.add(responses.POST, POST_URL, json={"data": {"id": "1"}}, status=200)
+            with pytest.raises(TweetAPIError):
+                make_client(max_retries=3).post.create_post(**POST_PARAMS)
+            assert len(responses.calls) == 1
+
+    @responses.activate
+    def test_repeats_a_write_when_retry_after_says_it_never_reached_x(self):
+        for status, code in [(429, "RATE_LIMITED"), (503, None)]:
+            responses.reset()
+            responses.add(responses.POST, POST_URL, **v2_error(status, code, {"Retry-After": "0"}))
+            responses.add(responses.POST, POST_URL, json={"data": {"id": "1"}}, status=200)
+            make_client(max_retries=3).post.create_post(**POST_PARAMS)
+            assert len(responses.calls) == 2
+
+    @responses.activate
+    def test_does_not_repeat_a_login_that_x_itself_rate_limited(self):
+        responses.add(responses.POST, f"{BASE_URL}/tw-v2/auth/login", **v2_error(429, "RATE_LIMITED"))
+        with pytest.raises(RateLimitError):
+            make_client(max_retries=3).auth.login(
+                username="user", password="pass", proxy="host:8080@user:pass", country="US"
+            )
+        assert len(responses.calls) == 1
+
+    @responses.activate
+    def test_retries_reads_sent_as_post(self):
+        url = f"{BASE_URL}/tw-v2/xchat/history"
+        responses.add(responses.POST, url, **v2_error(500))
+        responses.add(responses.POST, url, json={"data": {}}, status=200)
+
+        make_client(max_retries=3).xchat.get_history(auth_token="AUTH_TOKEN", conversation_id="1-2")
+        assert len(responses.calls) == 2
+

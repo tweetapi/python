@@ -22,7 +22,7 @@ class XChatResource:
         return self._client._post("/tw-v2/xchat/conversations", {
             "authToken": auth_token, "cursor": cursor,
             "graphSnapshotId": graph_snapshot_id, "limit": limit, "proxy": proxy,
-        })
+        }, read=True)
 
     def send(self, *, auth_token: str, recipient_id: str, message: str, proxy: Optional[str] = None) -> ActionResponse:
         """Send an encrypted message."""
@@ -36,10 +36,10 @@ class XChatResource:
         return self._client._post("/tw-v2/xchat/history", {
             "authToken": auth_token, "conversationId": conversation_id,
             "cursor": cursor, "limit": limit, "proxy": proxy,
-        })
+        }, read=True)
 
     def can_dm(self, *, auth_token: str, user_ids: list[str], proxy: Optional[str] = None) -> ApiResponse:
         """Check if you can send encrypted DMs to users."""
         return self._client._post("/tw-v2/xchat/can-dm", {
             "authToken": auth_token, "userIds": user_ids, "proxy": proxy,
-        })
+        }, read=True)

@@ -34,4 +34,4 @@ class TweetResource:
 
     def translate(self, *, tweet_id: str, dst_lang: str) -> TweetTranslationResponse:
         """Translate a tweet to a different language."""
-        return self._client._post("/tw-v2/tweet/translate", {"tweetId": tweet_id, "dstLang": dst_lang})
+        return self._client._post("/tw-v2/tweet/translate", {"tweetId": tweet_id, "dstLang": dst_lang}, read=True)

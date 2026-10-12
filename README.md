@@ -35,7 +35,8 @@ next_page = client.user.get_followers(
 ## SDK behavior
 
 - Public methods have type annotations, and response models use `TypedDict`.
-- The client retries rate limits, server errors, timeouts, and connection failures by default. Username changes and accepting or denying follow requests disable automatic retries.
+- Reads retry rate limits, server errors, timeouts, and connection failures by default. Writes retry only when the API confirms the request never reached X, so an action is never sent twice. Username changes and accepting or denying follow requests disable automatic retries.
+- Errors that a retry cannot fix fail at once: a failing `proxy` or a used-up or expired plan.
 - `paginate()` yields items from cursor-based responses; `paginate_pages()` yields full response pages.
 - HTTP errors map to exception classes such as `RateLimitError` and `NotFoundError`.
 - Timeouts can use one value or separate connect and read values.
@@ -332,12 +333,24 @@ Each helper accepts a callable that takes a cursor and returns a response with `
 
 ## Retries
 
-The client retries these transient failures:
+The client retries reads after these transient failures. Reads are every GET request, plus `tweet.translate()` and the X Chat `get_conversations()`, `get_history()`, and `can_dm()` calls.
 
-- For a 429 response, it waits for `RateLimitError.retry_after` seconds, up to `max_retry_delay`.
-- For a 5xx response, timeout, or connection failure, it uses exponential backoff with up to 25% jitter.
+- For a 429 response, it waits for `RateLimitError.retry_after` seconds, up to `max_retry_delay`. That is the API's `Retry-After`, or 60 seconds if it sends none.
+- For a 5xx response, it waits for `Retry-After` when the API sends one.
+- Otherwise, and for a timeout or connection failure, it uses exponential backoff with up to 25% jitter.
 
 By default, the client makes up to 3 retries. Its base delay starts at 1 second, doubles after each attempt, and is capped at 30 seconds. Other 4xx responses are not retried.
+
+Writes, such as posts, replies, likes, follows, messages, and logins, retry only after a 429 or 503 response that includes `Retry-After`. The API sends that header only before a request reaches X, so the retry cannot repeat an action. Any other failure of a write, including a timeout, may have happened after X accepted the action. The client raises the error instead, so you can check the result before trying again.
+
+These errors are never retried, because repeating the request cannot succeed:
+
+| `code` | Status | Cause |
+| --- | --- | --- |
+| `PROXY_ERROR` | 502 | Your `proxy` refused the connection or could not be reached |
+| `PROXY_TIMEOUT` | 504 | Your `proxy` timed out |
+| `QUOTA_EXHAUSTED` | 429 | Your plan allowance or prepaid balance is used up |
+| `SUBSCRIPTION_INACTIVE` | 429 | Your plan expired or is inactive |
 
 Username changes and accepting or denying follow requests make one attempt regardless of `max_retries`.
 
@@ -401,10 +414,39 @@ except TweetAPIError as e:
 
 Every error includes these attributes:
 
-- `code`: API error code when supplied, or `"UNKNOWN_ERROR"` for the `/tw-v2` `{statusCode, message}` error format
+- `code`: API error code, such as `"ACCOUNT_LOCKED"` or `"RATE_LIMITED"`, or `"UNKNOWN_ERROR"` when the response has no specific code
 - `status_code`: HTTP status code
 - `message`: human-readable error message
 - `details`: response context such as a field, reason, or retry delay
+
+### Error codes
+
+`ErrorCode` provides the codes as constants. Network failures use `"CONNECTION_ERROR"`.
+
+```python
+from tweetapi import ErrorCode, TweetAPIError
+
+try:
+    client.post.create_post(auth_token=auth_token, text="Hello", proxy=proxy)
+except TweetAPIError as e:
+    if e.code == ErrorCode.ACCOUNT_LOCKED:
+        print("Unlock the account on X, then try again")
+```
+
+| `code` | Status | Meaning |
+| --- | --- | --- |
+| `RATE_LIMITED` | 429 | Per-minute limit reached. `retry_after` gives the seconds until it resets. During login, X can also return it without `Retry-After`. |
+| `QUOTA_EXHAUSTED` | 429 | Plan allowance or prepaid balance used up |
+| `SUBSCRIPTION_INACTIVE` | 429 | Plan expired or inactive |
+| `ACCOUNT_SUSPENDED` | 403 | The account behind `auth_token` is suspended |
+| `ACCOUNT_LOCKED` | 403 | The account behind `auth_token` is locked |
+| `PROXY_ERROR` | 502 | Your `proxy` refused the connection or could not be reached |
+| `PROXY_TIMEOUT` | 504 | Your `proxy` timed out |
+| `INVALID_CREDENTIALS` | 401 | Login: wrong username or password |
+| `TWO_FACTOR_REQUIRED` | 401 | Login: the account needs `two_factor_secret` |
+| `INVALID_TWO_FACTOR_CODE` | 401 | Login: the two-factor code was rejected |
+| `EMAIL_VERIFICATION_REQUIRED` | 401 | Login: the account must verify its email first |
+| `LOGIN_RUNTIME_UNAVAILABLE` | 503 | Login: X could not be reached; try again later |
 
 ## Configuration
 
