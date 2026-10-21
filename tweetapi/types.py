@@ -599,6 +599,18 @@ class TweetsPaginatedResponse(TypedDict):
     pagination: Pagination
 
 
+class TweetDetails(TypedDict, total=False):
+    tweet: Optional[Tweet]
+    # Parent tweets above a reply, oldest first. Empty on cursor pages and for non-replies.
+    ancestors: list[Tweet]
+    replies: list[Tweet]
+    nextCursor: Optional[str]
+
+
+class TweetDetailsResponse(TypedDict):
+    data: TweetDetails
+
+
 class TweetTranslationResponse(TypedDict):
     data: TweetTranslation
 
