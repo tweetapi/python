@@ -24,7 +24,7 @@ class UserResource:
         return self._client._get("/tw-v2/user/by-username", {"username": username})
 
     def get_by_usernames(self, *, usernames: str) -> UsersResponse:
-        """Get multiple user profiles by usernames (comma-separated)."""
+        """Get up to 100 user profiles by usernames (comma-separated)."""
         return self._client._get("/tw-v2/user/by-usernames", {"usernames": usernames})
 
     def get_by_user_id(self, *, user_id: str) -> UserResponse:
@@ -32,7 +32,7 @@ class UserResource:
         return self._client._get("/tw-v2/user/by-id", {"userId": user_id})
 
     def get_by_user_ids(self, *, user_ids: list[str]) -> UsersResponse:
-        """Get multiple user profiles by user IDs (list of ID strings, max 50)."""
+        """Get up to 100 user profiles by user IDs (list of ID strings)."""
         return self._client._get("/tw-v2/user/by-ids", {"userIds": user_ids})
 
     def get_tweets(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:

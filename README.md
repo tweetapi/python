@@ -49,9 +49,9 @@ next_page = client.user.get_followers(
 | Method | Description |
 |--------|-------------|
 | `client.user.get_by_username(username=...)` | Get user profile by username |
-| `client.user.get_by_usernames(usernames=...)` | Get multiple users (comma-separated) |
+| `client.user.get_by_usernames(usernames=...)` | Get up to 100 users (comma-separated) |
 | `client.user.get_by_user_id(user_id=...)` | Get user profile by ID |
-| `client.user.get_by_user_ids(user_ids=...)` | Get multiple users by IDs |
+| `client.user.get_by_user_ids(user_ids=...)` | Get up to 100 users by IDs |
 | `client.user.get_tweets(user_id=...)` | Get a user's tweets |
 | `client.user.get_tweets_and_replies(user_id=...)` | Get tweets and replies |
 | `client.user.get_following(user_id=...)` | Get who a user follows |
@@ -69,7 +69,7 @@ next_page = client.user.get_followers(
 
 | Method | Description |
 |--------|-------------|
-| `client.tweet.get_details_and_conversation(tweet_id=...)` | Get tweet details and replies |
+| `client.tweet.get_details_and_conversation(tweet_id=...)` | Get tweet details, parent tweets (`ancestors`), and replies |
 | `client.tweet.get_details_by_ids(ids=...)` | Get multiple tweets (max 200) |
 | `client.tweet.get_retweets(tweet_id=...)` | Get users who retweeted |
 | `client.tweet.get_quotes(tweet_id=...)` | Get quote tweets |

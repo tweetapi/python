@@ -5,6 +5,7 @@ from typing import Any, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from ..client import TweetAPI
     from ..types import (
+        TweetDetailsResponse,
         TweetResponse,
         TweetsPaginatedResponse,
         TweetTranslationResponse,
@@ -16,8 +17,8 @@ class TweetResource:
     def __init__(self, client: TweetAPI) -> None:
         self._client = client
 
-    def get_details_and_conversation(self, *, tweet_id: str, cursor: Optional[str] = None, sort_by: Optional[str] = None) -> TweetsPaginatedResponse:
-        """Get tweet details and conversation thread."""
+    def get_details_and_conversation(self, *, tweet_id: str, cursor: Optional[str] = None, sort_by: Optional[str] = None) -> TweetDetailsResponse:
+        """Get tweet details, its parent tweets (``ancestors``) when it is a reply, and a page of replies."""
         return self._client._get("/tw-v2/tweet/details", {"tweetId": tweet_id, "cursor": cursor, "sortBy": sort_by})
 
     def get_details_by_ids(self, *, ids: str) -> dict[str, Any]:
