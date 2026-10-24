@@ -52,16 +52,16 @@ class InteractionResource:
             "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
         })
 
-    def follow(self, *, auth_token: str, user_id: str, proxy: Optional[str] = None) -> ActionResponse:
-        """Follow a user."""
+    def follow(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Follow a user. ``username`` is the optional username of the target account."""
         return self._client._post("/tw-v2/interaction/follow", {
-            "authToken": auth_token, "userId": user_id, "proxy": proxy,
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
         })
 
-    def unfollow(self, *, auth_token: str, user_id: str, proxy: Optional[str] = None) -> ActionResponse:
-        """Unfollow a user."""
+    def unfollow(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Unfollow a user. ``username`` is the optional username of the target account."""
         return self._client._post("/tw-v2/interaction/unfollow", {
-            "authToken": auth_token, "userId": user_id, "proxy": proxy,
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
         })
 
     def get_follow_requests(self, *, auth_token: str, proxy: Optional[str] = None, cursor: Optional[str] = None, count: Optional[int] = None) -> FollowRequestsResponse:

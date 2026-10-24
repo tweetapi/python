@@ -24,11 +24,26 @@ class XChatResource:
             "graphSnapshotId": graph_snapshot_id, "limit": limit, "proxy": proxy,
         }, read=True)
 
-    def send(self, *, auth_token: str, recipient_id: str, message: str, proxy: Optional[str] = None) -> ActionResponse:
-        """Send an encrypted message."""
+    def send(
+        self,
+        *,
+        auth_token: str,
+        recipient_id: str,
+        message: str,
+        conversation_token: Optional[str] = None,
+        conversation_key_version: Optional[str] = None,
+        encrypted_conversation_key: Optional[str] = None,
+        proxy: Optional[str] = None,
+    ) -> ActionResponse:
+        """Send an encrypted message.
+
+        The three conversation fields are fetched automatically when omitted.
+        """
         return self._client._post("/tw-v2/xchat/send", {
             "authToken": auth_token, "recipientId": recipient_id,
-            "message": message, "proxy": proxy,
+            "message": message, "conversationToken": conversation_token,
+            "conversationKeyVersion": conversation_key_version,
+            "encryptedConversationKey": encrypted_conversation_key, "proxy": proxy,
         })
 
     def get_history(self, *, auth_token: str, conversation_id: str, cursor: Optional[str] = None, limit: Optional[int] = None, proxy: Optional[str] = None) -> PaginatedResponse:

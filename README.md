@@ -107,8 +107,8 @@ next_page = client.user.get_followers(
 | `client.interaction.delete_retweet(auth_token=..., tweet_id=...)` | Remove retweet |
 | `client.interaction.bookmark(auth_token=..., tweet_id=...)` | Bookmark a tweet |
 | `client.interaction.delete_bookmark(auth_token=..., tweet_id=...)` | Remove bookmark |
-| `client.interaction.follow(auth_token=..., user_id=...)` | Follow a user |
-| `client.interaction.unfollow(auth_token=..., user_id=...)` | Unfollow a user |
+| `client.interaction.follow(auth_token=..., user_id=..., username=...)` | Follow a user. `username` is optional |
+| `client.interaction.unfollow(auth_token=..., user_id=..., username=...)` | Unfollow a user. `username` is optional |
 | `client.interaction.get_follow_requests(auth_token=..., proxy=..., cursor=..., count=...)` | List pending follow requester IDs |
 | `client.interaction.accept_follow_request(auth_token=..., user_id=..., proxy=...)` | Accept one pending follow request |
 | `client.interaction.deny_follow_request(auth_token=..., user_id=..., proxy=...)` | Deny one pending follow request |
@@ -171,7 +171,7 @@ These actions are not guaranteed to be idempotent and are never retried automati
 | Method | Description |
 |--------|-------------|
 | `client.community.get_details(community_id=...)` | Get community details |
-| `client.community.get_tweets(community_id=..., sort_by=...)` | Get community tweets |
+| `client.community.get_tweets(community_id=..., sort_by=...)` | Get community tweets. `sort_by` is `"Relevance"` (default) or `"Recency"` |
 | `client.community.get_members(community_id=...)` | Get members |
 | `client.community.search(query=...)` | Search communities |
 | `client.community.create_post(auth_token=..., text=..., community_id=..., proxy=...)` | Post in community |
@@ -214,6 +214,8 @@ These actions are not guaranteed to be idempotent and are never retried automati
 | `client.xchat.get_history(auth_token=..., conversation_id=...)` | Get conversation history |
 | `client.xchat.can_dm(auth_token=..., user_ids=...)` | Check DM availability |
 
+`client.xchat.send()` also accepts `conversation_token`, `conversation_key_version`, and `encrypted_conversation_key`. The API fetches them itself when they are omitted.
+
 ### Unencrypted DMs
 
 | Method | Description |
@@ -226,6 +228,25 @@ These actions are not guaranteed to be idempotent and are never retried automati
 | `client.dm.get_conversation(auth_token=..., conversation_id=...)` | Get messages |
 | `client.dm.get_dm_user_updates(auth_token=..., cursor=...)` | Get DM user updates |
 | `client.dm.accept_conversation(auth_token=..., conversation_id=...)` | Accept a conversation request |
+
+### Account
+
+| Method | Description |
+|--------|-------------|
+| `client.account.get_usage()` | Units left on your API key, and its rate limit |
+
+```python
+usage = client.account.get_usage()["data"]
+
+print(usage["availableUnits"])  # plan units left + spendable PAYG units
+if usage["plan"]:  # None for a PAYG-only account
+    print(usage["plan"]["remainingUnits"])
+if usage["payg"]:  # None until a PAYG wallet is funded
+    print(usage["payg"]["expiresAt"])
+print(usage["rateLimit"]["requestsPerMinute"])
+```
+
+This call costs no units. It only counts toward your per-minute rate limit.
 
 ## Posting and profile media
 

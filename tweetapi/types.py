@@ -551,6 +551,37 @@ class LoginResponse(TypedDict):
     timestamp: str
 
 
+# ─── Account ─────────────────────────────────────────────────────────────────
+
+
+class AccountPlanUsage(TypedDict):
+    active: bool
+    requestLimit: int
+    usedUnits: int
+    remainingUnits: int
+    periodEnd: Optional[str]
+
+
+class AccountPaygBalance(TypedDict):
+    availableUnits: int
+    """Expired PAYG units count as 0."""
+    expiresAt: Optional[str]
+
+
+class AccountRateLimit(TypedDict):
+    requestsPerMinute: int
+
+
+class AccountUsage(TypedDict):
+    availableUnits: int
+    """Plan units left plus spendable PAYG units."""
+    plan: Optional[AccountPlanUsage]
+    """``None`` for a PAYG-only account."""
+    payg: Optional[AccountPaygBalance]
+    """``None`` until a PAYG wallet is funded."""
+    rateLimit: AccountRateLimit
+
+
 # ─── Typed Response Wrappers ────────────────────────────────────────────────
 # Specific wrappers that give better IDE autocomplete than the generic
 # ``ApiResponse`` / ``PaginatedResponse`` with ``data: Any``.
@@ -661,3 +692,7 @@ class NotificationPaginatedResponse(TypedDict):
 
 class LoginApiResponse(TypedDict):
     data: LoginResponse
+
+
+class AccountUsageResponse(TypedDict):
+    data: AccountUsage
