@@ -53,13 +53,13 @@ class InteractionResource:
         })
 
     def follow(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
-        """Follow a user. With ``username``, the request comes from their profile page."""
+        """Follow a user. ``username`` is the optional username of the target account."""
         return self._client._post("/tw-v2/interaction/follow", {
             "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
         })
 
     def unfollow(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
-        """Unfollow a user. With ``username``, the request comes from their profile page."""
+        """Unfollow a user. ``username`` is the optional username of the target account."""
         return self._client._post("/tw-v2/interaction/unfollow", {
             "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
         })

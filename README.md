@@ -107,8 +107,8 @@ next_page = client.user.get_followers(
 | `client.interaction.delete_retweet(auth_token=..., tweet_id=...)` | Remove retweet |
 | `client.interaction.bookmark(auth_token=..., tweet_id=...)` | Bookmark a tweet |
 | `client.interaction.delete_bookmark(auth_token=..., tweet_id=...)` | Remove bookmark |
-| `client.interaction.follow(auth_token=..., user_id=..., username=...)` | Follow a user. `username` is optional; with it, the request comes from their profile page |
-| `client.interaction.unfollow(auth_token=..., user_id=..., username=...)` | Unfollow a user. `username` is optional, as for `follow` |
+| `client.interaction.follow(auth_token=..., user_id=..., username=...)` | Follow a user. `username` is optional |
+| `client.interaction.unfollow(auth_token=..., user_id=..., username=...)` | Unfollow a user. `username` is optional |
 | `client.interaction.get_follow_requests(auth_token=..., proxy=..., cursor=..., count=...)` | List pending follow requester IDs |
 | `client.interaction.accept_follow_request(auth_token=..., user_id=..., proxy=...)` | Accept one pending follow request |
 | `client.interaction.deny_follow_request(auth_token=..., user_id=..., proxy=...)` | Deny one pending follow request |
