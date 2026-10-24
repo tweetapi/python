@@ -22,8 +22,8 @@ class CommunityResource:
         """Get community details."""
         return self._client._get("/tw-v2/community/details", {"communityId": community_id})
 
-    def get_tweets(self, *, community_id: str, sort_by: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
-        """Get tweets in a community."""
+    def get_tweets(self, *, community_id: str, sort_by: Optional[str] = None, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get tweets in a community. ``sort_by`` is "Relevance" (default) or "Recency"."""
         return self._client._get("/tw-v2/community/tweets", {"communityId": community_id, "sortBy": sort_by, "cursor": cursor})
 
     def get_members(self, *, community_id: str, cursor: Optional[str] = None) -> CommunityMemberPaginatedResponse:
