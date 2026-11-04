@@ -102,6 +102,7 @@ class TweetAPI:
         from .resources.xchat import XChatResource
         from .resources.unencrypted_dm import UnencryptedDMResource
         from .resources.account import AccountResource
+        from .resources.trends import TrendsResource
 
         self.user = UserResource(self)
         self.tweet = TweetResource(self)
@@ -116,6 +117,7 @@ class TweetAPI:
         self.xchat = XChatResource(self)
         self.dm = UnencryptedDMResource(self)
         self.account = AccountResource(self)
+        self.trends = TrendsResource(self)
 
     def _get(self, path: str, params: Optional[dict[str, Any]] = None) -> Any:
         """Send a GET request to the API."""

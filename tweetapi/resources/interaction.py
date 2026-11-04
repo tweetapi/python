@@ -8,6 +8,7 @@ if TYPE_CHECKING:
         ActionResponse,
         FollowRequestsResponse,
         NotificationPaginatedResponse,
+        TweetsPaginatedResponse,
         UserAnalyticsResponse,
     )
 
@@ -104,6 +105,21 @@ class InteractionResource:
         """Remove a user from a list."""
         return self._client._post("/tw-v2/interaction/remove-from-list", {
             "authToken": auth_token, "listId": list_id, "userId": user_id, "proxy": proxy,
+        })
+
+    def get_bookmarks(self, *, auth_token: str, cursor: Optional[str] = None, proxy: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts bookmarked by the ``auth_token`` account."""
+        return self._client._get("/tw-v2/interaction/bookmarks", {
+            "authToken": auth_token, "cursor": cursor, "proxy": proxy,
+        })
+
+    def get_likes(self, *, auth_token: str, user_id: str, cursor: Optional[str] = None, proxy: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts liked by the ``auth_token`` account.
+
+        ``user_id`` must be the numeric ID of that same account.
+        """
+        return self._client._get("/tw-v2/interaction/likes", {
+            "authToken": auth_token, "userId": user_id, "cursor": cursor, "proxy": proxy,
         })
 
     def get_notifications(self, *, auth_token: str, timeline_type: Optional[str] = None, count: Optional[int] = None, cursor: Optional[str] = None, proxy: Optional[str] = None) -> NotificationPaginatedResponse:

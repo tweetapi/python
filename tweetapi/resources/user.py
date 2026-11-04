@@ -10,6 +10,7 @@ if TYPE_CHECKING:
         UserPaginatedResponse,
         UserRelationshipResponse,
         TweetsPaginatedResponse,
+        ListPaginatedResponse,
         PaginatedResponse,
         ApiResponse,
     )
@@ -42,6 +43,26 @@ class UserResource:
     def get_tweets_and_replies(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
         """Get a user's tweets and replies."""
         return self._client._get("/tw-v2/user/tweets-and-replies", {"userId": user_id, "cursor": cursor})
+
+    def get_photos(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get a user's posts with photos, as on the Photos tab of their profile."""
+        return self._client._get("/tw-v2/user/photos", {"userId": user_id, "cursor": cursor})
+
+    def get_videos(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get a user's posts with videos, as on the Videos tab of their profile."""
+        return self._client._get("/tw-v2/user/videos", {"userId": user_id, "cursor": cursor})
+
+    def get_affiliates(self, *, user_id: str, cursor: Optional[str] = None) -> UserPaginatedResponse:
+        """Get the accounts affiliated with a business profile."""
+        return self._client._get("/tw-v2/user/affiliates", {"userId": user_id, "cursor": cursor})
+
+    def get_lists(self, *, user_id: str, cursor: Optional[str] = None) -> ListPaginatedResponse:
+        """Get the Lists on a user's Lists tab. They can include Lists owned by other accounts."""
+        return self._client._get("/tw-v2/user/lists", {"userId": user_id, "cursor": cursor})
+
+    def get_list_memberships(self, *, user_id: str, cursor: Optional[str] = None) -> ListPaginatedResponse:
+        """Get the Lists a user has been added to as a member."""
+        return self._client._get("/tw-v2/user/list-memberships", {"userId": user_id, "cursor": cursor})
 
     def get_following(self, *, user_id: str, cursor: Optional[str] = None) -> UserPaginatedResponse:
         """Get who a user follows (v2 — full user objects)."""

@@ -582,6 +582,44 @@ class AccountUsage(TypedDict):
     rateLimit: AccountRateLimit
 
 
+# ─── Trends ──────────────────────────────────────────────────────────────────
+
+
+class Trend(TypedDict):
+    name: str
+    query: str
+    url: Optional[str]
+    promoted: bool
+    tweetVolume: Optional[int]
+    """``None`` whenever X reports no volume (never 0)."""
+
+
+class TrendsByPlaceLocation(TypedDict):
+    woeid: int
+    name: str
+
+
+class TrendsByPlace(TypedDict):
+    location: TrendsByPlaceLocation
+    asOf: Optional[str]
+    createdAt: Optional[str]
+    trends: list[Trend]
+
+
+class TrendLocationPlaceType(TypedDict):
+    code: int
+    name: str
+
+
+class TrendLocation(TypedDict):
+    woeid: int
+    name: str
+    placeType: TrendLocationPlaceType
+    country: Optional[str]
+    countryCode: Optional[str]
+    parentId: Optional[int]
+
+
 # ─── Typed Response Wrappers ────────────────────────────────────────────────
 # Specific wrappers that give better IDE autocomplete than the generic
 # ``ApiResponse`` / ``PaginatedResponse`` with ``data: Any``.
@@ -696,3 +734,11 @@ class LoginApiResponse(TypedDict):
 
 class AccountUsageResponse(TypedDict):
     data: AccountUsage
+
+
+class TrendsByPlaceResponse(TypedDict):
+    data: TrendsByPlace
+
+
+class TrendLocationsResponse(TypedDict):
+    data: list[TrendLocation]

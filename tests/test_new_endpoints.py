@@ -1,0 +1,140 @@
+"""Offline contracts for the endpoints added in 2.7.0."""
+
+import inspect
+from urllib.parse import parse_qs, urlsplit
+
+import pytest
+import responses
+
+from tweetapi import TweetAPI
+from tweetapi.resources.trends import TrendsResource
+
+BASE = "https://api.tweetapi.com/tw-v2"
+AUTH = "test-auth-token"
+PROXY = "host:8080@user:pass"
+USER_ID = "44196397"
+PAGE = {"data": [], "pagination": {"nextCursor": None, "prevCursor": None}}
+
+
+def make_client():
+    return TweetAPI(api_key="test-key", max_retries=0)
+
+
+def query(call):
+    return parse_qs(urlsplit(call.request.url).query)
+
+
+def method_of(client, resource, method):
+    return getattr(getattr(client, resource), method)
+
+
+# resource, method, path, required kwargs and their query, optional kwargs and their query
+READS = [
+    ("user", "get_photos", "/user/photos",
+     {"user_id": USER_ID}, {"userId": USER_ID}, {"cursor": "c1"}, {"cursor": "c1"}),
+    ("user", "get_videos", "/user/videos",
+     {"user_id": USER_ID}, {"userId": USER_ID}, {"cursor": "c1"}, {"cursor": "c1"}),
+    ("user", "get_affiliates", "/user/affiliates",
+     {"user_id": USER_ID}, {"userId": USER_ID}, {"cursor": "c1"}, {"cursor": "c1"}),
+    ("user", "get_lists", "/user/lists",
+     {"user_id": USER_ID}, {"userId": USER_ID}, {"cursor": "c1"}, {"cursor": "c1"}),
+    ("user", "get_list_memberships", "/user/list-memberships",
+     {"user_id": USER_ID}, {"userId": USER_ID}, {"cursor": "c1"}, {"cursor": "c1"}),
+    ("interaction", "get_bookmarks", "/interaction/bookmarks",
+     {"auth_token": AUTH}, {"authToken": AUTH},
+     {"cursor": "c1", "proxy": PROXY}, {"cursor": "c1", "proxy": PROXY}),
+    ("interaction", "get_likes", "/interaction/likes",
+     {"auth_token": AUTH, "user_id": USER_ID}, {"authToken": AUTH, "userId": USER_ID},
+     {"cursor": "c1", "proxy": PROXY}, {"cursor": "c1", "proxy": PROXY}),
+]
+READ_IDS = [f"{r[0]}.{r[1]}" for r in READS]
+
+
+@pytest.mark.parametrize("resource,method,path,required,_q,optional,_oq", READS, ids=READ_IDS)
+def test_read_signature(resource, method, path, required, _q, optional, _oq):
+    params = dict(inspect.signature(method_of(make_client(), resource, method)).parameters)
+    assert set(params) == set(required) | set(optional)
+    assert all(p.kind == inspect.Parameter.KEYWORD_ONLY for p in params.values())
+    assert all(params[k].default is inspect.Parameter.empty for k in required)
+    assert all(params[k].default is None for k in optional)
+
+
+@pytest.mark.parametrize("resource,method,path,required,expected,_o,_oq", READS, ids=READ_IDS)
+@responses.activate
+def test_read_sends_get_and_drops_unset_optionals(resource, method, path, required, expected, _o, _oq):
+    responses.get(f"{BASE}{path}", json=PAGE)
+    assert method_of(make_client(), resource, method)(**required) == PAGE
+
+    request = responses.calls[0].request
+    assert request.method == "GET"
+    assert urlsplit(request.url).path == f"/tw-v2{path}"
+    assert query(responses.calls[0]) == {k: [v] for k, v in expected.items()}
+    assert request.body is None
+
+
+@pytest.mark.parametrize("resource,method,path,required,expected,optional,extra", READS, ids=READ_IDS)
+@responses.activate
+def test_read_sends_optionals_when_set(resource, method, path, required, expected, optional, extra):
+    responses.get(f"{BASE}{path}", json=PAGE)
+    method_of(make_client(), resource, method)(**required, **optional)
+    assert query(responses.calls[0]) == {k: [v] for k, v in {**expected, **extra}.items()}
+
+
+# ─── Trends ──────────────────────────────────────────────────────────────────
+
+TRENDS = {
+    "location": {"woeid": 23424977, "name": "United States"},
+    "asOf": "2026-11-04T10:00:00.000Z",
+    "createdAt": "2026-11-04T09:55:00.000Z",
+    "trends": [
+        {"name": "#Example", "query": "%23Example", "url": None, "promoted": False, "tweetVolume": None},
+    ],
+}
+LOCATIONS = [
+    {"woeid": 1, "name": "Worldwide", "placeType": {"code": 19, "name": "Supername"},
+     "country": None, "countryCode": None, "parentId": 0},
+]
+
+
+def test_trends_resource_is_wired():
+    assert isinstance(make_client().trends, TrendsResource)
+
+
+def test_trends_get_takes_optional_country_or_woeid():
+    params = dict(inspect.signature(TrendsResource.get).parameters)
+    params.pop("self")
+    assert set(params) == {"country", "woeid"}
+    assert all(p.kind == inspect.Parameter.KEYWORD_ONLY and p.default is None for p in params.values())
+
+
+@responses.activate
+def test_trends_get_without_arguments_asks_for_worldwide():
+    responses.get(f"{BASE}/trends", json={"data": TRENDS})
+    assert make_client().trends.get() == {"data": TRENDS}
+    assert responses.calls[0].request.url == f"{BASE}/trends"
+
+
+@responses.activate
+def test_trends_get_with_country():
+    responses.get(f"{BASE}/trends", json={"data": TRENDS})
+    make_client().trends.get(country="US")
+    assert query(responses.calls[0]) == {"country": ["US"]}
+
+
+@pytest.mark.parametrize("woeid", [23424977, "23424977"])
+@responses.activate
+def test_trends_get_with_woeid_as_number_or_string(woeid):
+    responses.get(f"{BASE}/trends", json={"data": TRENDS})
+    make_client().trends.get(woeid=woeid)
+    assert query(responses.calls[0]) == {"woeid": ["23424977"]}
+
+
+@responses.activate
+def test_trends_get_locations_sends_no_query_string():
+    responses.get(f"{BASE}/trends/locations", json={"data": LOCATIONS})
+    assert make_client().trends.get_locations() == {"data": LOCATIONS}
+
+    request = responses.calls[0].request
+    assert request.method == "GET"
+    assert request.url == f"{BASE}/trends/locations"
+    assert list(inspect.signature(TrendsResource.get_locations).parameters) == ["self"]
