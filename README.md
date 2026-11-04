@@ -188,7 +188,7 @@ These actions are not guaranteed to be idempotent and are never retried automati
 | `client.list.get_members(list_id=...)` | Get list members |
 | `client.list.get_followers(list_id=...)` | Get list followers |
 | `client.list.search(query=...)` | Search Lists |
-| `client.list.create(auth_token=..., name=..., description=..., is_private=...)` | Create a list |
+| `client.list.create(auth_token=..., name=..., description=..., is_private=..., proxy=...)` | Create a list |
 | `client.list.delete(auth_token=..., list_id=..., proxy=...)` | Delete a list you own |
 | `client.list.add_member(auth_token=..., list_id=..., user_id=..., proxy=...)` | Add a member |
 | `client.list.remove_member(auth_token=..., list_id=..., user_id=..., proxy=...)` | Remove a member |
