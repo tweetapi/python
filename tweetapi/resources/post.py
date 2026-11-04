@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..client import TweetAPI
@@ -60,7 +60,7 @@ class PostResource:
             "proxy": proxy, "disableLinkPreview": disable_link_preview,
         })
 
-    def reply_post_with_media(self, *, auth_token: str, text: str, tweet_id: str, media: list[Any], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
+    def reply_post_with_media(self, *, auth_token: str, text: str, tweet_id: str, media: list[TweetMediaInput], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
         """Reply to a tweet with media attachments."""
         return self._client._post("/tw-v2/interaction/reply-post-with-media", {
             "authToken": auth_token, "text": text, "tweetId": tweet_id,

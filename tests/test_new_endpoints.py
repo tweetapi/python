@@ -1,14 +1,17 @@
-"""Offline contracts for the endpoints added in 2.7.0."""
+"""Offline contracts for the endpoints and parameter types added in 2.7.0."""
 
 import inspect
 import json
+from typing import get_type_hints
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import responses
 
-from tweetapi import ServerError, TweetAPI
+from tweetapi import ServerError, TweetAPI, types
+from tweetapi.resources.community import CommunityResource
+from tweetapi.resources.post import PostResource
 from tweetapi.resources.trends import TrendsResource
 
 BASE = "https://api.tweetapi.com/tw-v2"
@@ -327,3 +330,12 @@ def test_trends_get_locations_sends_no_query_string():
     assert request.method == "GET"
     assert request.url == f"{BASE}/trends/locations"
     assert list(inspect.signature(TrendsResource.get_locations).parameters) == ["self"]
+
+
+# ─── Parameter fixes ─────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("resource", [PostResource, CommunityResource])
+def test_reply_with_media_takes_tweet_media_inputs(resource):
+    hints = get_type_hints(resource.reply_post_with_media, vars(types))
+    assert hints["media"] == list[types.TweetMediaInput]

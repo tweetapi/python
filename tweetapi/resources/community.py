@@ -75,7 +75,7 @@ class CommunityResource:
             "communityId": community_id, "proxy": proxy, "disableLinkPreview": disable_link_preview,
         })
 
-    def reply_post_with_media(self, *, auth_token: str, text: str, tweet_id: str, community_id: str, media: list[Any], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
+    def reply_post_with_media(self, *, auth_token: str, text: str, tweet_id: str, community_id: str, media: list[TweetMediaInput], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
         """Reply to a community post with media."""
         return self._client._post("/tw-v2/interaction/reply-community-post-with-media", {
             "authToken": auth_token, "text": text, "tweetId": tweet_id,
