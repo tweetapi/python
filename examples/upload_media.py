@@ -28,7 +28,8 @@ try:
         print(f'State: {status["state"]}')
 
     if status["state"] == "failed":
-        print(f'X could not process the file: {status["error"]["message"]}')
+        reason = (status.get("error") or {}).get("message")
+        print("X could not process the file" + (f": {reason}" if reason else ""))
     else:
         # Post it with the same auth token that uploaded it
         post = client.post.create_post_with_media(

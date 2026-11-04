@@ -76,7 +76,7 @@ class InteractionResource:
         })
 
     def remove_follower(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
-        """Make a user stop following you. ``username`` is the optional username of the follower."""
+        """Make a user stop following you. ``user_id`` identifies the follower; ``username`` is optional and not needed."""
         return self._client._post("/tw-v2/interaction/remove-follower", {
             "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
         })
