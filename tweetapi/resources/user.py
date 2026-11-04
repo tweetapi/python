@@ -64,6 +64,22 @@ class UserResource:
         """Get the Lists a user has been added to as a member."""
         return self._client._get("/tw-v2/user/list-memberships", {"userId": user_id, "cursor": cursor})
 
+    def get_highlights(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts a user has added to the Highlights tab of their profile."""
+        return self._client._get("/tw-v2/user/highlights", {"userId": user_id, "cursor": cursor})
+
+    def get_articles(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts that published a user's X Articles.
+
+        ``article.text`` is empty here; pass the post ID to
+        ``tweet.get_details_and_conversation`` to read the full Article.
+        """
+        return self._client._get("/tw-v2/user/articles", {"userId": user_id, "cursor": cursor})
+
+    def get_similar_accounts(self, *, user_id: str) -> UserPaginatedResponse:
+        """Get the accounts X lists as similar to a user. One page; takes no cursor."""
+        return self._client._get("/tw-v2/user/similar-accounts", {"userId": user_id})
+
     def get_following(self, *, user_id: str, cursor: Optional[str] = None) -> UserPaginatedResponse:
         """Get who a user follows (v2 — full user objects)."""
         return self._client._get("/tw-v2/user/following", {"userId": user_id, "cursor": cursor})

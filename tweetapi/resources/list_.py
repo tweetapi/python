@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from ..client import TweetAPI
     from ..types import (
         ActionResponse,
+        ListPaginatedResponse,
         ListResponse,
         TweetsPaginatedResponse,
         UserPaginatedResponse,
@@ -31,6 +32,10 @@ class ListResource:
     def get_followers(self, *, list_id: str, cursor: Optional[str] = None) -> UserPaginatedResponse:
         """Get followers of a list."""
         return self._client._get("/tw-v2/list/followers", {"listId": list_id, "cursor": cursor})
+
+    def search(self, *, query: str, cursor: Optional[str] = None) -> ListPaginatedResponse:
+        """Search Lists by keyword."""
+        return self._client._get("/tw-v2/list/search", {"query": query, "cursor": cursor})
 
     def create(self, *, auth_token: str, name: str, description: str = "", is_private: bool = True) -> ListResponse:
         """Create a list."""

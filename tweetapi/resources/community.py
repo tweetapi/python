@@ -34,6 +34,10 @@ class CommunityResource:
         """Search communities."""
         return self._client._get("/tw-v2/community/search", {"query": query, "cursor": cursor})
 
+    def get_media(self, *, community_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get posts with photos or videos from a community, as on its Media tab."""
+        return self._client._get("/tw-v2/community/media", {"communityId": community_id, "cursor": cursor})
+
     def create_post(self, *, auth_token: str, text: str, community_id: str, proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
         """Create a post in a community."""
         return self._client._post("/tw-v2/interaction/create-community-post", {

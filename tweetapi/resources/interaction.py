@@ -10,6 +10,7 @@ if TYPE_CHECKING:
         NotificationPaginatedResponse,
         TweetsPaginatedResponse,
         UserAnalyticsResponse,
+        UserPaginatedResponse,
     )
 
 
@@ -120,6 +121,18 @@ class InteractionResource:
         """
         return self._client._get("/tw-v2/interaction/likes", {
             "authToken": auth_token, "userId": user_id, "cursor": cursor, "proxy": proxy,
+        })
+
+    def get_blocked_accounts(self, *, auth_token: str, cursor: Optional[str] = None, proxy: Optional[str] = None) -> UserPaginatedResponse:
+        """Get the accounts blocked by the ``auth_token`` account."""
+        return self._client._get("/tw-v2/interaction/blocked-accounts", {
+            "authToken": auth_token, "cursor": cursor, "proxy": proxy,
+        })
+
+    def get_muted_accounts(self, *, auth_token: str, cursor: Optional[str] = None, proxy: Optional[str] = None) -> UserPaginatedResponse:
+        """Get the accounts muted by the ``auth_token`` account."""
+        return self._client._get("/tw-v2/interaction/muted-accounts", {
+            "authToken": auth_token, "cursor": cursor, "proxy": proxy,
         })
 
     def get_notifications(self, *, auth_token: str, timeline_type: Optional[str] = None, count: Optional[int] = None, cursor: Optional[str] = None, proxy: Optional[str] = None) -> NotificationPaginatedResponse:
