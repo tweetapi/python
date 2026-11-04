@@ -303,7 +303,7 @@ client.post.create_post_with_media(
     auth_token="AUTH_TOKEN",
     text="Launch update",
     media=[{"media_id": "1971008286821380096"}],
-    proxy="host:port:user:pass",
+    proxy="host:port@user:pass",
 )
 ```
 
@@ -313,7 +313,7 @@ Use `reply_option` to set reply controls when creating standard, quote, or media
 client.post.create_post(
     auth_token="AUTH_TOKEN",
     text="Followers can reply",
-    proxy="host:port:user:pass",
+    proxy="host:port@user:pass",
     reply_option={"mode": "followers"},
 )
 ```
@@ -360,7 +360,7 @@ client.community.create_quote(
     text="Useful context",
     attachment_url="https://x.com/user/status/123",
     community_id="987",
-    proxy="host:port:user:pass",
+    proxy="host:port@user:pass",
 )
 client.community.create_quote_with_media(
     auth_token="AUTH_TOKEN",
@@ -368,7 +368,7 @@ client.community.create_quote_with_media(
     attachment_url="https://x.com/user/status/123",
     community_id="987",
     media=[{"media_id": "1971008286821380096"}],
-    proxy="host:port:user:pass",
+    proxy="host:port@user:pass",
 )
 ```
 
