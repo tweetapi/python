@@ -158,6 +158,7 @@ class TweetMediaUrlInputRequired(TypedDict):
 
 
 class TweetMediaUrlInput(TweetMediaUrlInputRequired, total=False):
+    # Optional: the API reads the type from the downloaded file.
     type: str
 
 
@@ -174,6 +175,7 @@ class ProfileMediaUrlInputRequired(TypedDict):
 
 
 class ProfileMediaUrlInput(ProfileMediaUrlInputRequired, total=False):
+    # Optional: the API reads the type from the downloaded file.
     type: str
 
 
