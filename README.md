@@ -1,6 +1,6 @@
 # TweetAPI Python SDK
 
-`tweetapi` is the Python SDK for [TweetAPI](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk). It provides methods for users, tweets, posts, profiles, interactions, lists, communities, Spaces, search, authentication, and direct messages.
+`tweetapi` is the Python SDK for [TweetAPI](https://tweetapi.com?utm_source=github&utm_medium=readme&utm_campaign=python-sdk). It provides methods for users, tweets, posts, profiles, interactions, lists, communities, Spaces, search, trends, authentication, and direct messages.
 
 ## Install
 
@@ -39,7 +39,7 @@ next_page = client.user.get_followers(
 - Errors that a retry cannot fix fail at once: a failing `proxy` or a used-up or expired plan.
 - `paginate()` yields items from cursor-based responses; `paginate_pages()` yields full response pages.
 - HTTP errors map to exception classes such as `RateLimitError` and `NotFoundError`.
-- Timeouts can use one value or separate connect and read values.
+- Timeouts can use one value or separate connect and read values. Calls that upload a file use a longer read timeout, `media_timeout`.
 - The package supports Python 3.9+ and depends on `requests`.
 
 ## API reference
@@ -54,6 +54,14 @@ next_page = client.user.get_followers(
 | `client.user.get_by_user_ids(user_ids=...)` | Get up to 100 users by IDs |
 | `client.user.get_tweets(user_id=...)` | Get a user's tweets |
 | `client.user.get_tweets_and_replies(user_id=...)` | Get tweets and replies |
+| `client.user.get_photos(user_id=...)` | Get a user's posts with photos |
+| `client.user.get_videos(user_id=...)` | Get a user's posts with videos |
+| `client.user.get_affiliates(user_id=...)` | Get the accounts affiliated with a business profile |
+| `client.user.get_lists(user_id=...)` | Get the Lists on a user's Lists tab |
+| `client.user.get_list_memberships(user_id=...)` | Get the Lists a user is a member of |
+| `client.user.get_highlights(user_id=...)` | Get a user's Highlights |
+| `client.user.get_articles(user_id=...)` | Get the posts that published a user's Articles |
+| `client.user.get_similar_accounts(user_id=...)` | Get accounts similar to a user (one page, no cursor) |
 | `client.user.get_following(user_id=...)` | Get who a user follows |
 | `client.user.get_followers(user_id=...)` | Get a user's followers |
 | `client.user.get_verified_followers(user_id=...)` | Get verified followers |
@@ -73,18 +81,25 @@ next_page = client.user.get_followers(
 | `client.tweet.get_details_by_ids(ids=...)` | Get multiple tweets (max 200) |
 | `client.tweet.get_retweets(tweet_id=...)` | Get users who retweeted |
 | `client.tweet.get_quotes(tweet_id=...)` | Get quote tweets |
+| `client.tweet.get_hidden_replies(tweet_id=...)` | Get the replies its author has hidden |
 | `client.tweet.translate(tweet_id=..., dst_lang=...)` | Translate a tweet |
 
 ### Post
 
 | Method | Description |
 |--------|-------------|
-| `client.post.create_post(auth_token=..., text=..., proxy=..., reply_option=...)` | Create a tweet |
+| `client.post.create_post(auth_token=..., text=..., proxy=..., reply_option=..., poll=...)` | Create a tweet, optionally with a poll |
 | `client.post.create_post_quote(auth_token=..., text=..., attachment_url=..., proxy=..., reply_option=...)` | Quote tweet |
 | `client.post.create_post_with_media(auth_token=..., text=..., media=..., proxy=..., reply_option=...)` | Tweet with media |
 | `client.post.reply_post(auth_token=..., text=..., tweet_id=..., proxy=...)` | Reply to a tweet |
 | `client.post.reply_post_with_media(...)` | Reply with media |
 | `client.post.delete_post(auth_token=..., tweet_id=...)` | Delete a tweet |
+| `client.post.upload_media(auth_token=..., proxy=..., media=...)` | Upload one photo, GIF or video for a later post |
+| `client.post.get_media_status(auth_token=..., proxy=..., media_id=...)` | Check whether an upload has finished processing |
+| `client.post.pin_post(auth_token=..., tweet_id=...)` | Pin a tweet to your profile |
+| `client.post.unpin_post(auth_token=..., tweet_id=...)` | Unpin a tweet |
+| `client.post.hide_reply(auth_token=..., tweet_id=...)` | Hide a reply to your tweet |
+| `client.post.unhide_reply(auth_token=..., tweet_id=...)` | Show a hidden reply again |
 
 ### Profile
 
@@ -107,13 +122,23 @@ next_page = client.user.get_followers(
 | `client.interaction.delete_retweet(auth_token=..., tweet_id=...)` | Remove retweet |
 | `client.interaction.bookmark(auth_token=..., tweet_id=...)` | Bookmark a tweet |
 | `client.interaction.delete_bookmark(auth_token=..., tweet_id=...)` | Remove bookmark |
+| `client.interaction.vote_poll(auth_token=..., tweet_id=..., choice=...)` | Vote in a poll. `choice` is 1 to 4, in the order x.com shows the options |
 | `client.interaction.follow(auth_token=..., user_id=..., username=...)` | Follow a user. `username` is optional |
 | `client.interaction.unfollow(auth_token=..., user_id=..., username=...)` | Unfollow a user. `username` is optional |
+| `client.interaction.remove_follower(auth_token=..., user_id=..., username=...)` | Make a user stop following you |
+| `client.interaction.block(auth_token=..., user_id=..., username=...)` | Block a user |
+| `client.interaction.unblock(auth_token=..., user_id=..., username=...)` | Unblock a user |
+| `client.interaction.mute(auth_token=..., user_id=..., username=...)` | Mute a user |
+| `client.interaction.unmute(auth_token=..., user_id=..., username=...)` | Unmute a user |
 | `client.interaction.get_follow_requests(auth_token=..., proxy=..., cursor=..., count=...)` | List pending follow requester IDs |
 | `client.interaction.accept_follow_request(auth_token=..., user_id=..., proxy=...)` | Accept one pending follow request |
 | `client.interaction.deny_follow_request(auth_token=..., user_id=..., proxy=...)` | Deny one pending follow request |
 | `client.interaction.add_member_to_list(auth_token=..., list_id=..., user_id=...)` | Add to list |
 | `client.interaction.remove_member_from_list(auth_token=..., list_id=..., user_id=...)` | Remove from list |
+| `client.interaction.get_bookmarks(auth_token=...)` | Get the bookmarks of the `auth_token` account |
+| `client.interaction.get_likes(auth_token=..., user_id=...)` | Get the likes of the `auth_token` account. `user_id` is that account's ID |
+| `client.interaction.get_blocked_accounts(auth_token=...)` | Get the accounts the `auth_token` account blocks |
+| `client.interaction.get_muted_accounts(auth_token=...)` | Get the accounts the `auth_token` account mutes |
 | `client.interaction.get_notifications(auth_token=...)` | Get notifications |
 | `client.interaction.get_user_analytics(auth_token=...)` | Get analytics |
 
@@ -162,7 +187,9 @@ These actions are not guaranteed to be idempotent and are never retried automati
 | `client.list.get_tweets(list_id=...)` | Get tweets in a list |
 | `client.list.get_members(list_id=...)` | Get list members |
 | `client.list.get_followers(list_id=...)` | Get list followers |
+| `client.list.search(query=...)` | Search Lists |
 | `client.list.create(auth_token=..., name=..., description=..., is_private=...)` | Create a list |
+| `client.list.delete(auth_token=..., list_id=..., proxy=...)` | Delete a list you own |
 | `client.list.add_member(auth_token=..., list_id=..., user_id=..., proxy=...)` | Add a member |
 | `client.list.remove_member(auth_token=..., list_id=..., user_id=..., proxy=...)` | Remove a member |
 
@@ -174,6 +201,7 @@ These actions are not guaranteed to be idempotent and are never retried automati
 | `client.community.get_tweets(community_id=..., sort_by=...)` | Get community tweets. `sort_by` is `"Relevance"` (default) or `"Recency"` |
 | `client.community.get_members(community_id=...)` | Get members |
 | `client.community.search(query=...)` | Search communities |
+| `client.community.get_media(community_id=...)` | Get posts with photos or videos |
 | `client.community.create_post(auth_token=..., text=..., community_id=..., proxy=...)` | Post in community |
 | `client.community.create_post_with_media(...)` | Post with media |
 | `client.community.create_quote(auth_token=..., text=..., attachment_url=..., community_id=..., proxy=...)` | Quote post in community |
@@ -195,6 +223,26 @@ These actions are not guaranteed to be idempotent and are never retried automati
 | Method | Description |
 |--------|-------------|
 | `client.explore.search(query=..., type=...)` | Search tweets, users, photos, or videos |
+
+`type` is `"Top"`, `"Latest"`, `"People"`, `"Photos"` or `"Videos"`. `"Latest"`, `"Photos"` and `"Videos"` return tweets, `"People"` returns users, and `"Top"` returns items shaped `{"type": "tweet" | "user", "content": ...}` (`SearchTopResult`).
+
+### Trends
+
+| Method | Description |
+|--------|-------------|
+| `client.trends.get(country=...)` | Get trends worldwide, in a country, or at a WOEID. Pass `country` or `woeid`, or neither |
+| `client.trends.get_locations()` | List the locations with trends, and their WOEIDs |
+
+```python
+us = client.trends.get(country="US")
+for trend in us["data"]["trends"]:
+    print(trend["name"], trend["tweetVolume"])  # None when X reports no volume
+
+worldwide = client.trends.get()
+locations = client.trends.get_locations()["data"]
+```
+
+Pass `country` (a two-letter code) or `woeid`, not both. Omit both for worldwide trends. Not every country has trends, and an unsupported code returns 404; `get_locations()` lists the places that do.
 
 ### Auth
 
@@ -257,7 +305,7 @@ client.post.create_post_with_media(
     auth_token="AUTH_TOKEN",
     text="Launch update",
     media=[{"media_id": "1971008286821380096"}],
-    proxy="host:port:user:pass",
+    proxy="host:port@user:pass",
 )
 ```
 
@@ -267,7 +315,7 @@ Use `reply_option` to set reply controls when creating standard, quote, or media
 client.post.create_post(
     auth_token="AUTH_TOKEN",
     text="Followers can reply",
-    proxy="host:port:user:pass",
+    proxy="host:port@user:pass",
     reply_option={"mode": "followers"},
 )
 ```
@@ -314,7 +362,7 @@ client.community.create_quote(
     text="Useful context",
     attachment_url="https://x.com/user/status/123",
     community_id="987",
-    proxy="host:port:user:pass",
+    proxy="host:port@user:pass",
 )
 client.community.create_quote_with_media(
     auth_token="AUTH_TOKEN",
@@ -322,9 +370,59 @@ client.community.create_quote_with_media(
     attachment_url="https://x.com/user/status/123",
     community_id="987",
     media=[{"media_id": "1971008286821380096"}],
-    proxy="host:port:user:pass",
+    proxy="host:port@user:pass",
 )
 ```
+
+## Polls
+
+Pass `poll` to `create_post()` with 2 to 4 `choices` of up to 25 characters and a `durationMinutes` from 5 to 10080 (7 days):
+
+```python
+client.post.create_post(
+    auth_token="AUTH_TOKEN",
+    text="Which option do you prefer?",
+    proxy="host:port@user:pass",
+    poll={"choices": ["Option A", "Option B"], "durationMinutes": 1440},
+)
+
+client.interaction.vote_poll(auth_token="AUTH_TOKEN", tweet_id="1971008286821380096", choice=2)
+```
+
+A poll can't be combined with `disable_link_preview`, and a post with a poll is limited to 280 characters. For `vote_poll()`, `choice` counts from 1 in the order x.com shows the options.
+
+## Uploading media for a later post
+
+`upload_media()` sends one photo, GIF or video, as a `url` or as base64 `data` with its `type`. The API waits up to 30 seconds for X to process it, then returns the media ID and its `state`. A long video can still be `"pending"` or `"in_progress"`; check it with `get_media_status()` after `checkAfterSecs` seconds. Then post it by passing `mediaId` as `media_id`:
+
+```python
+import time
+
+media = client.post.upload_media(
+    auth_token="AUTH_TOKEN",
+    proxy="host:port@user:pass",
+    media={"url": "https://example.com/clip.mp4"},
+)["data"]
+
+status = media
+while status["state"] in ("pending", "in_progress"):
+    time.sleep(status["checkAfterSecs"] or 5)
+    status = client.post.get_media_status(
+        auth_token="AUTH_TOKEN",
+        proxy="host:port@user:pass",
+        media_id=media["mediaId"],
+    )["data"]
+
+if status["state"] == "succeeded":
+    client.post.create_post_with_media(
+        auth_token="AUTH_TOKEN",
+        text="New clip",
+        media=[{"media_id": media["mediaId"]}],
+        proxy="host:port@user:pass",
+    )
+```
+
+Post with the same `auth_token` that uploaded the media. Each status check costs one unit. When `state` is `"failed"`, `error` holds X's reason. X discards an unused upload after `expiresAfterSecs` seconds.
 
 ## Pagination
 
@@ -478,6 +576,7 @@ client = TweetAPI(
     timeout=30,                       # Optional; one value for connect and read
     connect_timeout=10.0,             # Optional (default: 10s)
     read_timeout=30.0,                # Optional (default: 30s)
+    media_timeout=120.0,              # Optional; read timeout for file uploads (default: 120s)
     max_retries=3,                    # Optional (default: 3, set 0 to disable)
     backoff_multiplier=2.0,           # Optional (default: 2.0)
     initial_retry_delay=1.0,          # Optional (default: 1.0s)
@@ -487,6 +586,8 @@ client = TweetAPI(
 # You can also pass a tuple for timeout
 client = TweetAPI(api_key="YOUR_API_KEY", timeout=(5, 30))  # (connect, read)
 ```
+
+Calls that upload a file wait while X processes it, so they use `media_timeout` as their read timeout and keep the normal connect timeout. These are the methods that post or reply with media (also in communities), `upload_media()`, `profile.avatar()`, `profile.banner()`, and `dm.send_dm()` when it sends media. The default is 120 seconds, or the read timeout if that is longer. A value you set is always used.
 
 ## Requirements
 

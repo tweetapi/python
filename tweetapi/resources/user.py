@@ -10,6 +10,7 @@ if TYPE_CHECKING:
         UserPaginatedResponse,
         UserRelationshipResponse,
         TweetsPaginatedResponse,
+        ListPaginatedResponse,
         PaginatedResponse,
         ApiResponse,
     )
@@ -42,6 +43,42 @@ class UserResource:
     def get_tweets_and_replies(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
         """Get a user's tweets and replies."""
         return self._client._get("/tw-v2/user/tweets-and-replies", {"userId": user_id, "cursor": cursor})
+
+    def get_photos(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get a user's posts with photos, as on the Photos tab of their profile."""
+        return self._client._get("/tw-v2/user/photos", {"userId": user_id, "cursor": cursor})
+
+    def get_videos(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get a user's posts with videos, as on the Videos tab of their profile."""
+        return self._client._get("/tw-v2/user/videos", {"userId": user_id, "cursor": cursor})
+
+    def get_affiliates(self, *, user_id: str, cursor: Optional[str] = None) -> UserPaginatedResponse:
+        """Get the accounts affiliated with a business profile."""
+        return self._client._get("/tw-v2/user/affiliates", {"userId": user_id, "cursor": cursor})
+
+    def get_lists(self, *, user_id: str, cursor: Optional[str] = None) -> ListPaginatedResponse:
+        """Get the Lists on a user's Lists tab. They can include Lists owned by other accounts."""
+        return self._client._get("/tw-v2/user/lists", {"userId": user_id, "cursor": cursor})
+
+    def get_list_memberships(self, *, user_id: str, cursor: Optional[str] = None) -> ListPaginatedResponse:
+        """Get the Lists a user has been added to as a member."""
+        return self._client._get("/tw-v2/user/list-memberships", {"userId": user_id, "cursor": cursor})
+
+    def get_highlights(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts a user has added to the Highlights tab of their profile."""
+        return self._client._get("/tw-v2/user/highlights", {"userId": user_id, "cursor": cursor})
+
+    def get_articles(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts that published a user's X Articles.
+
+        ``article.text`` is empty here; pass the post ID to
+        ``tweet.get_details_and_conversation`` to read the full Article.
+        """
+        return self._client._get("/tw-v2/user/articles", {"userId": user_id, "cursor": cursor})
+
+    def get_similar_accounts(self, *, user_id: str) -> UserPaginatedResponse:
+        """Get the accounts X lists as similar to a user. One page; takes no cursor."""
+        return self._client._get("/tw-v2/user/similar-accounts", {"userId": user_id})
 
     def get_following(self, *, user_id: str, cursor: Optional[str] = None) -> UserPaginatedResponse:
         """Get who a user follows (v2 — full user objects)."""

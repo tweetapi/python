@@ -33,6 +33,10 @@ class TweetResource:
         """Get quote tweets for a tweet."""
         return self._client._get("/tw-v2/tweet/quotes", {"tweetId": tweet_id, "cursor": cursor})
 
+    def get_hidden_replies(self, *, tweet_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the replies to a tweet that its author has hidden."""
+        return self._client._get("/tw-v2/tweet/hidden-replies", {"tweetId": tweet_id, "cursor": cursor})
+
     def translate(self, *, tweet_id: str, dst_lang: str) -> TweetTranslationResponse:
         """Translate a tweet to a different language."""
         return self._client._post("/tw-v2/tweet/translate", {"tweetId": tweet_id, "dstLang": dst_lang}, read=True)

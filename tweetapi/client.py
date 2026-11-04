@@ -34,6 +34,12 @@ def _parse_retry_after(value: Optional[str]) -> Optional[int]:
     return int(seconds) if seconds.isascii() and seconds.isdigit() else None
 
 
+def _describe_timeout(timeout: Union[float, tuple[float, float]]) -> str:
+    if isinstance(timeout, tuple):
+        return f"connect={timeout[0]}s, read={timeout[1]}s"
+    return f"{timeout}s"
+
+
 class TweetAPI:
     """TweetAPI Python SDK client.
 
@@ -48,6 +54,9 @@ class TweetAPI:
         backoff_multiplier: Multiplier for exponential backoff (default: 2.0).
         initial_retry_delay: Initial retry delay in seconds (default: 1.0).
         max_retry_delay: Maximum retry delay cap in seconds (default: 30.0).
+        media_timeout: Read timeout in seconds for calls that upload a file, which
+            wait while X processes it. Default: 120, or the read timeout if that is
+            longer. The connect timeout stays the same.
     """
 
     def __init__(
@@ -61,6 +70,7 @@ class TweetAPI:
         backoff_multiplier: float = 2.0,
         initial_retry_delay: float = 1.0,
         max_retry_delay: float = 30.0,
+        media_timeout: Optional[float] = None,
     ) -> None:
         if not api_key:
             raise ValueError("TweetAPI: api_key is required")
@@ -77,6 +87,16 @@ class TweetAPI:
             )
         else:
             self._timeout = (10.0, 30.0)
+
+        # Calls that upload a file wait while X processes it, so they get a longer read
+        # timeout. A read timeout of None (wait forever) stays None.
+        if isinstance(self._timeout, tuple):
+            connect, read = self._timeout
+        else:
+            connect = read = self._timeout
+        if media_timeout is None:
+            media_timeout = read if read is None else max(120.0, read)
+        self._media_timeout = (connect, media_timeout)
 
         # Retry configuration
         self._max_retries = max_retries
@@ -102,6 +122,7 @@ class TweetAPI:
         from .resources.xchat import XChatResource
         from .resources.unencrypted_dm import UnencryptedDMResource
         from .resources.account import AccountResource
+        from .resources.trends import TrendsResource
 
         self.user = UserResource(self)
         self.tweet = TweetResource(self)
@@ -116,6 +137,7 @@ class TweetAPI:
         self.xchat = XChatResource(self)
         self.dm = UnencryptedDMResource(self)
         self.account = AccountResource(self)
+        self.trends = TrendsResource(self)
 
     def _get(self, path: str, params: Optional[dict[str, Any]] = None) -> Any:
         """Send a GET request to the API."""
@@ -133,16 +155,18 @@ class TweetAPI:
         *,
         retry: bool = True,
         read: bool = False,
+        upload: bool = False,
     ) -> Any:
         """Send a POST request to the API.
 
         It counts as a write unless ``read`` is set, so it is only retried when the
-        API sends ``Retry-After``.
+        API sends ``Retry-After``. ``upload`` marks a call that sends a file, which
+        uses the media timeout.
         """
         clean_body = None
         if body:
             clean_body = {k: v for k, v in body.items() if v is not None}
-        return self._request("POST", path, json=clean_body, retry=retry, read=read)
+        return self._request("POST", path, json=clean_body, retry=retry, read=read, upload=upload)
 
     @property
     def rate_limit_info(self) -> Optional[dict[str, Any]]:
@@ -150,12 +174,6 @@ class TweetAPI:
         return self._rate_limit_info
 
     # ── internal helpers ─────────────────────────────────────────────────
-
-    @property
-    def _timeout_desc(self) -> str:
-        if isinstance(self._timeout, tuple):
-            return f"connect={self._timeout[0]}s, read={self._timeout[1]}s"
-        return f"{self._timeout}s"
 
     def _is_retryable(self, error: TweetAPIError, read: bool) -> bool:
         if error.code in _NON_RETRYABLE_CODES:
@@ -190,10 +208,12 @@ class TweetAPI:
         json: Optional[dict[str, Any]] = None,
         retry: bool = True,
         read: bool = False,
+        upload: bool = False,
     ) -> Any:
         url = f"{self._base_url}{path}"
         last_error: Optional[TweetAPIError] = None
         max_retries = self._max_retries if retry else 0
+        timeout = self._media_timeout if upload else self._timeout
 
         for attempt in range(max_retries + 1):
             try:
@@ -202,11 +222,11 @@ class TweetAPI:
                     url,
                     params=params,
                     json=json,
-                    timeout=self._timeout,
+                    timeout=timeout,
                 )
             except requests.exceptions.Timeout as e:
                 last_error = ConnectionError_(
-                    f"Request timed out ({self._timeout_desc})", e
+                    f"Request timed out ({_describe_timeout(timeout)})", e
                 )
                 if attempt < max_retries and self._is_retryable(last_error, read):
                     time.sleep(self._calculate_retry_delay(last_error, attempt))

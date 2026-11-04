@@ -6,7 +6,7 @@ All types mirror the API's JSON response shapes exactly.
 
 from __future__ import annotations
 
-from typing import Any, List as TypingList, Optional, TypedDict, Union
+from typing import Any, List as TypingList, Literal, Optional, TypedDict, Union
 
 
 # ─── Response Wrappers ───────────────────────────────────────────────────────
@@ -27,6 +27,8 @@ class PaginatedResponse(TypedDict):
 
 
 class SearchMeta(TypedDict):
+    """Not sent by the API. Kept so existing imports keep working."""
+
     query: str
     resultType: str
     resultCount: int
@@ -34,9 +36,10 @@ class SearchMeta(TypedDict):
 
 
 class SearchResponse(TypedDict):
+    # Tweets for "Latest", "Photos" and "Videos", Users for "People", and
+    # SearchTopResult items for "Top".
     data: list[Any]
     pagination: Pagination
-    meta: SearchMeta
 
 
 class ActionData(TypedDict, total=False):
@@ -155,6 +158,7 @@ class TweetMediaUrlInputRequired(TypedDict):
 
 
 class TweetMediaUrlInput(TweetMediaUrlInputRequired, total=False):
+    # Optional: the API reads the type from the downloaded file.
     type: str
 
 
@@ -171,6 +175,7 @@ class ProfileMediaUrlInputRequired(TypedDict):
 
 
 class ProfileMediaUrlInput(ProfileMediaUrlInputRequired, total=False):
+    # Optional: the API reads the type from the downloaded file.
     type: str
 
 
@@ -180,6 +185,9 @@ class ProfileMediaDataInput(TypedDict):
 
 
 ProfileMediaInput = Union[ProfileMediaUrlInput, ProfileMediaDataInput]
+
+# One file for ``post.upload_media``: a URL, or base64 ``data`` plus its MIME ``type``.
+MediaUploadInput = Union[ProfileMediaUrlInput, ProfileMediaDataInput]
 
 
 class MediaSize(TypedDict, total=False):
@@ -224,6 +232,38 @@ class Media(TypedDict, total=False):
     sourceUserId: Optional[str]
 
 
+MediaProcessingState = Literal["pending", "in_progress", "succeeded", "failed"]
+
+
+class MediaProcessingError(TypedDict):
+    code: int
+    name: str
+    message: str
+
+
+class UploadedMedia(TypedDict):
+    mediaId: str
+    """Pass it as ``media_id`` in the ``media`` list of a post with media."""
+    mediaKey: Optional[str]
+    type: Literal["image", "gif", "video"]
+    size: int
+    """File size in bytes."""
+    state: MediaProcessingState
+    progressPercent: Optional[int]
+    checkAfterSecs: Optional[int]
+    expiresAfterSecs: Optional[int]
+
+
+class MediaStatus(TypedDict):
+    mediaId: str
+    state: MediaProcessingState
+    progressPercent: Optional[int]
+    checkAfterSecs: Optional[int]
+    error: Optional[MediaProcessingError]
+    """Set when ``state`` is ``"failed"``; the response is still a 200."""
+    expiresAfterSecs: Optional[int]
+
+
 # ─── Poll ────────────────────────────────────────────────────────────────────
 
 
@@ -241,6 +281,13 @@ class Poll(TypedDict, total=False):
     durationMinutes: int
     votingStatus: str
     totalVotes: int
+
+
+class PollInput(TypedDict):
+    choices: list[str]
+    """2 to 4 choices of up to 25 characters."""
+    durationMinutes: int
+    """5 to 10080 minutes (7 days)."""
 
 
 # ─── Card ────────────────────────────────────────────────────────────────────
@@ -395,6 +442,20 @@ class TweetTranslation(TypedDict):
     sourceLanguage: str
     destinationLanguage: str
     translationSource: str
+
+
+class SearchTopTweetResult(TypedDict):
+    type: Literal["tweet"]
+    content: Tweet
+
+
+class SearchTopUserResult(TypedDict):
+    type: Literal["user"]
+    content: User
+
+
+# One result of a "Top" search: a tweet or a user, labelled by ``type``.
+SearchTopResult = Union[SearchTopTweetResult, SearchTopUserResult]
 
 
 # ─── List ────────────────────────────────────────────────────────────────────
@@ -582,6 +643,44 @@ class AccountUsage(TypedDict):
     rateLimit: AccountRateLimit
 
 
+# ─── Trends ──────────────────────────────────────────────────────────────────
+
+
+class Trend(TypedDict):
+    name: str
+    query: str
+    url: Optional[str]
+    promoted: bool
+    tweetVolume: Optional[int]
+    """``None`` whenever X reports no volume (never 0)."""
+
+
+class TrendsByPlaceLocation(TypedDict):
+    woeid: int
+    name: str
+
+
+class TrendsByPlace(TypedDict):
+    location: TrendsByPlaceLocation
+    asOf: Optional[str]
+    createdAt: Optional[str]
+    trends: list[Trend]
+
+
+class TrendLocationPlaceType(TypedDict):
+    code: int
+    name: str
+
+
+class TrendLocation(TypedDict):
+    woeid: int
+    name: str
+    placeType: TrendLocationPlaceType
+    country: Optional[str]
+    countryCode: Optional[str]
+    parentId: Optional[int]
+
+
 # ─── Typed Response Wrappers ────────────────────────────────────────────────
 # Specific wrappers that give better IDE autocomplete than the generic
 # ``ApiResponse`` / ``PaginatedResponse`` with ``data: Any``.
@@ -696,3 +795,19 @@ class LoginApiResponse(TypedDict):
 
 class AccountUsageResponse(TypedDict):
     data: AccountUsage
+
+
+class UploadedMediaResponse(TypedDict):
+    data: UploadedMedia
+
+
+class MediaStatusResponse(TypedDict):
+    data: MediaStatus
+
+
+class TrendsByPlaceResponse(TypedDict):
+    data: TrendsByPlace
+
+
+class TrendLocationsResponse(TypedDict):
+    data: list[TrendLocation]

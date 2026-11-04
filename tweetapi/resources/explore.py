@@ -14,6 +14,10 @@ class ExploreResource:
     def search(self, *, query: str, type: str, cursor: Optional[str] = None) -> SearchResponse:
         """Search for tweets, users, photos, or videos.
 
+        ``data`` holds tweets for "Latest", "Photos" and "Videos", users for
+        "People", and ``{"type": "tweet" | "user", "content": ...}`` items
+        (``SearchTopResult``) for "Top".
+
         Args:
             query: Search query string. Supports Twitter search operators.
             type: Type of search results — "Latest", "Top", "People", "Photos", or "Videos".

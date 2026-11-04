@@ -8,7 +8,9 @@ if TYPE_CHECKING:
         ActionResponse,
         FollowRequestsResponse,
         NotificationPaginatedResponse,
+        TweetsPaginatedResponse,
         UserAnalyticsResponse,
+        UserPaginatedResponse,
     )
 
 
@@ -52,6 +54,15 @@ class InteractionResource:
             "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
         })
 
+    def vote_poll(self, *, auth_token: str, tweet_id: str, choice: int, proxy: Optional[str] = None) -> ActionResponse:
+        """Vote in the poll on a tweet.
+
+        ``choice`` is the option number, 1 to 4, in the order x.com shows the options.
+        """
+        return self._client._post("/tw-v2/interaction/vote-poll", {
+            "authToken": auth_token, "tweetId": tweet_id, "choice": choice, "proxy": proxy,
+        })
+
     def follow(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
         """Follow a user. ``username`` is the optional username of the target account."""
         return self._client._post("/tw-v2/interaction/follow", {
@@ -61,6 +72,36 @@ class InteractionResource:
     def unfollow(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
         """Unfollow a user. ``username`` is the optional username of the target account."""
         return self._client._post("/tw-v2/interaction/unfollow", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def remove_follower(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Make a user stop following you. ``user_id`` identifies the follower; ``username`` is optional and not needed."""
+        return self._client._post("/tw-v2/interaction/remove-follower", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def block(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Block a user. ``username`` is the optional username of the target account."""
+        return self._client._post("/tw-v2/interaction/block", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def unblock(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Unblock a user. ``username`` is the optional username of the target account."""
+        return self._client._post("/tw-v2/interaction/unblock", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def mute(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Mute a user. ``username`` is the optional username of the target account."""
+        return self._client._post("/tw-v2/interaction/mute", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def unmute(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Unmute a user. ``username`` is the optional username of the target account."""
+        return self._client._post("/tw-v2/interaction/unmute", {
             "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
         })
 
@@ -104,6 +145,33 @@ class InteractionResource:
         """Remove a user from a list."""
         return self._client._post("/tw-v2/interaction/remove-from-list", {
             "authToken": auth_token, "listId": list_id, "userId": user_id, "proxy": proxy,
+        })
+
+    def get_bookmarks(self, *, auth_token: str, cursor: Optional[str] = None, proxy: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts bookmarked by the ``auth_token`` account."""
+        return self._client._get("/tw-v2/interaction/bookmarks", {
+            "authToken": auth_token, "cursor": cursor, "proxy": proxy,
+        })
+
+    def get_likes(self, *, auth_token: str, user_id: str, cursor: Optional[str] = None, proxy: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts liked by the ``auth_token`` account.
+
+        ``user_id`` must be the numeric ID of that same account.
+        """
+        return self._client._get("/tw-v2/interaction/likes", {
+            "authToken": auth_token, "userId": user_id, "cursor": cursor, "proxy": proxy,
+        })
+
+    def get_blocked_accounts(self, *, auth_token: str, cursor: Optional[str] = None, proxy: Optional[str] = None) -> UserPaginatedResponse:
+        """Get the accounts blocked by the ``auth_token`` account."""
+        return self._client._get("/tw-v2/interaction/blocked-accounts", {
+            "authToken": auth_token, "cursor": cursor, "proxy": proxy,
+        })
+
+    def get_muted_accounts(self, *, auth_token: str, cursor: Optional[str] = None, proxy: Optional[str] = None) -> UserPaginatedResponse:
+        """Get the accounts muted by the ``auth_token`` account."""
+        return self._client._get("/tw-v2/interaction/muted-accounts", {
+            "authToken": auth_token, "cursor": cursor, "proxy": proxy,
         })
 
     def get_notifications(self, *, auth_token: str, timeline_type: Optional[str] = None, count: Optional[int] = None, cursor: Optional[str] = None, proxy: Optional[str] = None) -> NotificationPaginatedResponse:

@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from ..client import TweetAPI
     from ..types import (
         ActionResponse,
+        ListPaginatedResponse,
         ListResponse,
         TweetsPaginatedResponse,
         UserPaginatedResponse,
@@ -32,11 +33,21 @@ class ListResource:
         """Get followers of a list."""
         return self._client._get("/tw-v2/list/followers", {"listId": list_id, "cursor": cursor})
 
+    def search(self, *, query: str, cursor: Optional[str] = None) -> ListPaginatedResponse:
+        """Search Lists by keyword."""
+        return self._client._get("/tw-v2/list/search", {"query": query, "cursor": cursor})
+
     def create(self, *, auth_token: str, name: str, description: str = "", is_private: bool = True) -> ListResponse:
         """Create a list."""
         return self._client._post("/tw-v2/list/create", {
             "authToken": auth_token, "name": name, "description": description,
             "isPrivate": is_private,
+        })
+
+    def delete(self, *, auth_token: str, list_id: str, proxy: Optional[str] = None) -> ActionResponse:
+        """Delete a list the ``auth_token`` account owns. This is permanent."""
+        return self._client._post("/tw-v2/list/delete", {
+            "authToken": auth_token, "listId": list_id, "proxy": proxy,
         })
 
     def add_member(self, *, auth_token: str, list_id: str, user_id: str, proxy: Optional[str] = None) -> ActionResponse:

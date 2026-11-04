@@ -187,7 +187,7 @@ def test_reads_keep_normal_retries(failure):
                                                (422, TweetAPIError)])
 @responses.activate
 def test_actual_tw_v2_error_envelope(method, status, error_type):
-    # error.middleware.ts sends {statusCode, message} for /tw-v2 routes.
+    # /tw-v2 routes send errors as {statusCode, message}.
     is_read = method == "get_follow_requests"
     path = "follow-requests" if is_read else method.replace("_", "-")
     responses.add(responses.GET if is_read else responses.POST, f"{BASE}/{path}",

@@ -34,6 +34,10 @@ class CommunityResource:
         """Search communities."""
         return self._client._get("/tw-v2/community/search", {"query": query, "cursor": cursor})
 
+    def get_media(self, *, community_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get posts with photos or videos from a community, as on its Media tab."""
+        return self._client._get("/tw-v2/community/media", {"communityId": community_id, "cursor": cursor})
+
     def create_post(self, *, auth_token: str, text: str, community_id: str, proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
         """Create a post in a community."""
         return self._client._post("/tw-v2/interaction/create-community-post", {
@@ -46,7 +50,7 @@ class CommunityResource:
         return self._client._post("/tw-v2/interaction/create-community-post-with-media", {
             "authToken": auth_token, "text": text, "communityId": community_id,
             "media": media, "proxy": proxy, "disableLinkPreview": disable_link_preview,
-        })
+        }, upload=True)
 
     def create_quote(self, *, auth_token: str, text: str, attachment_url: str, community_id: str, proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
         """Create a quote post in a community."""
@@ -62,7 +66,7 @@ class CommunityResource:
             "authToken": auth_token, "text": text, "attachmentUrl": attachment_url,
             "communityId": community_id, "media": media, "proxy": proxy,
             "disableLinkPreview": disable_link_preview,
-        })
+        }, upload=True)
 
     def reply_post(self, *, auth_token: str, text: str, tweet_id: str, community_id: str, proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
         """Reply to a community post."""
@@ -71,13 +75,13 @@ class CommunityResource:
             "communityId": community_id, "proxy": proxy, "disableLinkPreview": disable_link_preview,
         })
 
-    def reply_post_with_media(self, *, auth_token: str, text: str, tweet_id: str, community_id: str, media: list[Any], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
+    def reply_post_with_media(self, *, auth_token: str, text: str, tweet_id: str, community_id: str, media: list[TweetMediaInput], proxy: str, disable_link_preview: Optional[bool] = None) -> ActionResponse:
         """Reply to a community post with media."""
         return self._client._post("/tw-v2/interaction/reply-community-post-with-media", {
             "authToken": auth_token, "text": text, "tweetId": tweet_id,
             "communityId": community_id, "media": media, "proxy": proxy,
             "disableLinkPreview": disable_link_preview,
-        })
+        }, upload=True)
 
     def join(self, *, auth_token: str, community_id: str, proxy: Optional[str] = None) -> ActionResponse:
         """Join a community."""
