@@ -5,13 +5,12 @@ client = TweetAPI(api_key="YOUR_API_KEY")
 # Search for latest tweets about Bitcoin
 results = client.explore.search(query="bitcoin", type="Latest")
 
-print(f'Found {results["meta"]["resultCount"]} results in {results["meta"]["completedIn"]}ms\n')
+print(f'Found {len(results["data"])} tweets\n')
 
-for item in results["data"]:
-    if "text" in item and "author" in item:
-        author = item["author"]
-        print(f'@{author["username"]}: {item["text"][:100]}')
-        print(f'  ♥ {item["likeCount"]}  🔁 {item["retweetCount"]}  💬 {item["replyCount"]}\n')
+for tweet in results["data"]:
+    author = tweet["author"]
+    print(f'@{author["username"]}: {tweet["text"][:100]}')
+    print(f'  ♥ {tweet["likeCount"]}  🔁 {tweet["retweetCount"]}  💬 {tweet["replyCount"]}\n')
 
 # Paginate if more results exist
 next_cursor = results["pagination"]["nextCursor"]

@@ -224,6 +224,8 @@ These actions are not guaranteed to be idempotent and are never retried automati
 |--------|-------------|
 | `client.explore.search(query=..., type=...)` | Search tweets, users, photos, or videos |
 
+`type` is `"Top"`, `"Latest"`, `"People"`, `"Photos"` or `"Videos"`. `"Latest"`, `"Photos"` and `"Videos"` return tweets, `"People"` returns users, and `"Top"` returns items shaped `{"type": "tweet" | "user", "content": ...}` (`SearchTopResult`).
+
 ### Trends
 
 | Method | Description |

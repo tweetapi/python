@@ -27,6 +27,8 @@ class PaginatedResponse(TypedDict):
 
 
 class SearchMeta(TypedDict):
+    """Not sent by the API. Kept so existing imports keep working."""
+
     query: str
     resultType: str
     resultCount: int
@@ -34,9 +36,10 @@ class SearchMeta(TypedDict):
 
 
 class SearchResponse(TypedDict):
+    # Tweets for "Latest", "Photos" and "Videos", Users for "People", and
+    # SearchTopResult items for "Top".
     data: list[Any]
     pagination: Pagination
-    meta: SearchMeta
 
 
 class ActionData(TypedDict, total=False):
@@ -437,6 +440,20 @@ class TweetTranslation(TypedDict):
     sourceLanguage: str
     destinationLanguage: str
     translationSource: str
+
+
+class SearchTopTweetResult(TypedDict):
+    type: Literal["tweet"]
+    content: Tweet
+
+
+class SearchTopUserResult(TypedDict):
+    type: Literal["user"]
+    content: User
+
+
+# One result of a "Top" search: a tweet or a user, labelled by ``type``.
+SearchTopResult = Union[SearchTopTweetResult, SearchTopUserResult]
 
 
 # ─── List ────────────────────────────────────────────────────────────────────
