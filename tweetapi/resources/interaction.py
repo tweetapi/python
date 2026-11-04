@@ -66,6 +66,36 @@ class InteractionResource:
             "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
         })
 
+    def remove_follower(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Make a user stop following you. ``username`` is the optional username of the follower."""
+        return self._client._post("/tw-v2/interaction/remove-follower", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def block(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Block a user. ``username`` is the optional username of the target account."""
+        return self._client._post("/tw-v2/interaction/block", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def unblock(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Unblock a user. ``username`` is the optional username of the target account."""
+        return self._client._post("/tw-v2/interaction/unblock", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def mute(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Mute a user. ``username`` is the optional username of the target account."""
+        return self._client._post("/tw-v2/interaction/mute", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
+    def unmute(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
+        """Unmute a user. ``username`` is the optional username of the target account."""
+        return self._client._post("/tw-v2/interaction/unmute", {
+            "authToken": auth_token, "userId": user_id, "username": username, "proxy": proxy,
+        })
+
     def get_follow_requests(self, *, auth_token: str, proxy: Optional[str] = None, cursor: Optional[str] = None, count: Optional[int] = None) -> FollowRequestsResponse:
         """List pending requester IDs for the supplied session's account.
 

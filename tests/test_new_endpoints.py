@@ -1,18 +1,22 @@
 """Offline contracts for the endpoints added in 2.7.0."""
 
 import inspect
+import json
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import responses
 
-from tweetapi import TweetAPI
+from tweetapi import ServerError, TweetAPI
 from tweetapi.resources.trends import TrendsResource
 
 BASE = "https://api.tweetapi.com/tw-v2"
 AUTH = "test-auth-token"
 PROXY = "host:8080@user:pass"
 USER_ID = "44196397"
+TWEET_ID = "1971008286821380096"
+LIST_ID = "1585430245762441216"
 PAGE = {"data": [], "pagination": {"nextCursor": None, "prevCursor": None}}
 
 
@@ -22,6 +26,10 @@ def make_client():
 
 def query(call):
     return parse_qs(urlsplit(call.request.url).query)
+
+
+def body(call):
+    return json.loads(call.request.body)
 
 
 def method_of(client, resource, method):
@@ -47,8 +55,7 @@ READS = [
     ("user", "get_similar_accounts", "/user/similar-accounts",
      {"user_id": USER_ID}, {"userId": USER_ID}, {}, {}),
     ("tweet", "get_hidden_replies", "/tweet/hidden-replies",
-     {"tweet_id": "1971008286821380096"}, {"tweetId": "1971008286821380096"},
-     {"cursor": "c1"}, {"cursor": "c1"}),
+     {"tweet_id": TWEET_ID}, {"tweetId": TWEET_ID}, {"cursor": "c1"}, {"cursor": "c1"}),
     ("list", "search", "/list/search",
      {"query": "crypto news"}, {"query": "crypto news"}, {"cursor": "c1"}, {"cursor": "c1"}),
     ("community", "get_media", "/community/media",
@@ -98,6 +105,85 @@ def test_read_sends_optionals_when_set(resource, method, path, required, expecte
     responses.get(f"{BASE}{path}", json=PAGE)
     method_of(make_client(), resource, method)(**required, **optional)
     assert query(responses.calls[0]) == {k: [v] for k, v in {**expected, **extra}.items()}
+
+
+# ─── Actions ─────────────────────────────────────────────────────────────────
+
+ON_TWEET = ({"auth_token": AUTH, "tweet_id": TWEET_ID}, {"authToken": AUTH, "tweetId": TWEET_ID},
+            {"proxy": PROXY}, {"proxy": PROXY})
+ON_USER = ({"auth_token": AUTH, "user_id": USER_ID}, {"authToken": AUTH, "userId": USER_ID},
+           {"username": "elonmusk", "proxy": PROXY}, {"username": "elonmusk", "proxy": PROXY})
+
+# resource, method, path, action, then required kwargs and their body, optional kwargs and their body
+ACTIONS = [
+    ("post", "pin_post", "/interaction/pin-post", "pin_tweet", *ON_TWEET),
+    ("post", "unpin_post", "/interaction/unpin-post", "unpin_tweet", *ON_TWEET),
+    ("post", "hide_reply", "/interaction/hide-reply", "hide_reply", *ON_TWEET),
+    ("post", "unhide_reply", "/interaction/unhide-reply", "unhide_reply", *ON_TWEET),
+    ("interaction", "block", "/interaction/block", "block", *ON_USER),
+    ("interaction", "unblock", "/interaction/unblock", "unblock", *ON_USER),
+    ("interaction", "mute", "/interaction/mute", "mute", *ON_USER),
+    ("interaction", "unmute", "/interaction/unmute", "unmute", *ON_USER),
+    ("interaction", "remove_follower", "/interaction/remove-follower", "remove_follower", *ON_USER),
+    ("list", "delete", "/list/delete", "delete_list",
+     {"auth_token": AUTH, "list_id": LIST_ID}, {"authToken": AUTH, "listId": LIST_ID},
+     {"proxy": PROXY}, {"proxy": PROXY}),
+]
+ACTION_IDS = [f"{a[0]}.{a[1]}" for a in ACTIONS]
+
+
+def action_response(action):
+    return {"data": {"id": "1", "action": action, "timestamp": "2026-11-04T00:00:00.000Z",
+                     "success": True, "message": "ok", "metadata": {}}}
+
+
+@pytest.mark.parametrize("resource,method,path,_a,required,_b,optional,_ob", ACTIONS, ids=ACTION_IDS)
+def test_action_signature(resource, method, path, _a, required, _b, optional, _ob):
+    params = dict(inspect.signature(method_of(make_client(), resource, method)).parameters)
+    assert set(params) == set(required) | set(optional)
+    assert all(p.kind == inspect.Parameter.KEYWORD_ONLY for p in params.values())
+    assert all(params[k].default is inspect.Parameter.empty for k in required)
+    assert all(params[k].default is None for k in optional)
+
+
+@pytest.mark.parametrize("resource,method,path,action,required,expected,_o,_ob", ACTIONS, ids=ACTION_IDS)
+@responses.activate
+def test_action_sends_post_and_drops_unset_optionals(resource, method, path, action, required, expected, _o, _ob):
+    responses.post(f"{BASE}{path}", json=action_response(action))
+    assert method_of(make_client(), resource, method)(**required) == action_response(action)
+
+    request = responses.calls[0].request
+    assert request.method == "POST"
+    assert request.url == f"{BASE}{path}"
+    assert body(responses.calls[0]) == expected
+
+
+@pytest.mark.parametrize("resource,method,path,action,required,expected,optional,extra", ACTIONS, ids=ACTION_IDS)
+@responses.activate
+def test_action_sends_optionals_when_set(resource, method, path, action, required, expected, optional, extra):
+    responses.post(f"{BASE}{path}", json=action_response(action))
+    method_of(make_client(), resource, method)(**required, **optional)
+    assert body(responses.calls[0]) == {**expected, **extra}
+
+
+@pytest.mark.parametrize("resource,method,path,action,required,_b,_o,_ob", ACTIONS, ids=ACTION_IDS)
+@responses.activate
+def test_action_is_not_repeated_after_a_failure(resource, method, path, action, required, _b, _o, _ob):
+    responses.post(f"{BASE}{path}", status=502, json={"statusCode": 502, "message": "Not confirmed"})
+    with patch("tweetapi.client.time.sleep"), pytest.raises(ServerError):
+        method_of(TweetAPI(api_key="test-key"), resource, method)(**required)
+    assert len(responses.calls) == 1
+
+
+@pytest.mark.parametrize("resource,method,path,action,required,_b,_o,_ob", ACTIONS, ids=ACTION_IDS)
+@responses.activate
+def test_action_is_retried_when_retry_after_says_it_never_reached_x(resource, method, path, action, required, _b, _o, _ob):
+    responses.post(f"{BASE}{path}", status=503, headers={"Retry-After": "1"},
+                   json={"statusCode": 503, "message": "unavailable"})
+    responses.post(f"{BASE}{path}", json=action_response(action))
+    with patch("tweetapi.client.time.sleep"):
+        method_of(TweetAPI(api_key="test-key"), resource, method)(**required)
+    assert len(responses.calls) == 2
 
 
 # ─── Trends ──────────────────────────────────────────────────────────────────

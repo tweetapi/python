@@ -44,6 +44,12 @@ class ListResource:
             "isPrivate": is_private,
         })
 
+    def delete(self, *, auth_token: str, list_id: str, proxy: Optional[str] = None) -> ActionResponse:
+        """Delete a list the ``auth_token`` account owns. This is permanent."""
+        return self._client._post("/tw-v2/list/delete", {
+            "authToken": auth_token, "listId": list_id, "proxy": proxy,
+        })
+
     def add_member(self, *, auth_token: str, list_id: str, user_id: str, proxy: Optional[str] = None) -> ActionResponse:
         """Add a user to a list."""
         return self._client._post("/tw-v2/list/add-member", {

@@ -57,3 +57,30 @@ class PostResource:
         return self._client._post("/tw-v2/interaction/delete-post", {
             "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
         })
+
+    def pin_post(self, *, auth_token: str, tweet_id: str, proxy: Optional[str] = None) -> ActionResponse:
+        """Pin one of your tweets to the top of your profile.
+
+        ``metadata.added_to_highlights`` says whether X also added it to the Highlights tab.
+        """
+        return self._client._post("/tw-v2/interaction/pin-post", {
+            "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
+        })
+
+    def unpin_post(self, *, auth_token: str, tweet_id: str, proxy: Optional[str] = None) -> ActionResponse:
+        """Unpin a tweet from the top of your profile."""
+        return self._client._post("/tw-v2/interaction/unpin-post", {
+            "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
+        })
+
+    def hide_reply(self, *, auth_token: str, tweet_id: str, proxy: Optional[str] = None) -> ActionResponse:
+        """Hide a reply to one of your tweets. ``tweet_id`` is the reply."""
+        return self._client._post("/tw-v2/interaction/hide-reply", {
+            "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
+        })
+
+    def unhide_reply(self, *, auth_token: str, tweet_id: str, proxy: Optional[str] = None) -> ActionResponse:
+        """Show a hidden reply to one of your tweets again. ``tweet_id`` is the reply."""
+        return self._client._post("/tw-v2/interaction/unhide-reply", {
+            "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
+        })
