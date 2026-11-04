@@ -37,11 +37,11 @@ class ListResource:
         """Search Lists by keyword."""
         return self._client._get("/tw-v2/list/search", {"query": query, "cursor": cursor})
 
-    def create(self, *, auth_token: str, name: str, description: str = "", is_private: bool = True) -> ListResponse:
+    def create(self, *, auth_token: str, name: str, description: str = "", is_private: bool = True, proxy: Optional[str] = None) -> ListResponse:
         """Create a list."""
         return self._client._post("/tw-v2/list/create", {
             "authToken": auth_token, "name": name, "description": description,
-            "isPrivate": is_private,
+            "isPrivate": is_private, "proxy": proxy,
         })
 
     def delete(self, *, auth_token: str, list_id: str, proxy: Optional[str] = None) -> ActionResponse:
