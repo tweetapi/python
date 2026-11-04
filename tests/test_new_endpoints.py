@@ -17,6 +17,7 @@ PROXY = "host:8080@user:pass"
 USER_ID = "44196397"
 TWEET_ID = "1971008286821380096"
 LIST_ID = "1585430245762441216"
+MEDIA_ID = "2100000000000000002"
 PAGE = {"data": [], "pagination": {"nextCursor": None, "prevCursor": None}}
 
 
@@ -73,6 +74,9 @@ READS = [
     ("interaction", "get_muted_accounts", "/interaction/muted-accounts",
      {"auth_token": AUTH}, {"authToken": AUTH},
      {"cursor": "c1", "proxy": PROXY}, {"cursor": "c1", "proxy": PROXY}),
+    ("post", "get_media_status", "/interaction/media-status",
+     {"auth_token": AUTH, "proxy": PROXY, "media_id": MEDIA_ID},
+     {"authToken": AUTH, "proxy": PROXY, "mediaId": MEDIA_ID}, {}, {}),
 ]
 READ_IDS = [f"{r[0]}.{r[1]}" for r in READS]
 
@@ -127,6 +131,10 @@ ACTIONS = [
     ("interaction", "remove_follower", "/interaction/remove-follower", "remove_follower", *ON_USER),
     ("list", "delete", "/list/delete", "delete_list",
      {"auth_token": AUTH, "list_id": LIST_ID}, {"authToken": AUTH, "listId": LIST_ID},
+     {"proxy": PROXY}, {"proxy": PROXY}),
+    ("interaction", "vote_poll", "/interaction/vote-poll", "vote_poll",
+     {"auth_token": AUTH, "tweet_id": TWEET_ID, "choice": 2},
+     {"authToken": AUTH, "tweetId": TWEET_ID, "choice": 2},
      {"proxy": PROXY}, {"proxy": PROXY}),
 ]
 ACTION_IDS = [f"{a[0]}.{a[1]}" for a in ACTIONS]
@@ -184,6 +192,81 @@ def test_action_is_retried_when_retry_after_says_it_never_reached_x(resource, me
     with patch("tweetapi.client.time.sleep"):
         method_of(TweetAPI(api_key="test-key"), resource, method)(**required)
     assert len(responses.calls) == 2
+
+
+# ─── Polls ───────────────────────────────────────────────────────────────────
+
+
+@responses.activate
+def test_create_post_without_poll_sends_no_poll():
+    responses.post(f"{BASE}/interaction/create-post", json=action_response("create_tweet"))
+    make_client().post.create_post(auth_token=AUTH, text="Hello", proxy=PROXY)
+    assert body(responses.calls[0]) == {"authToken": AUTH, "text": "Hello", "proxy": PROXY}
+
+
+@responses.activate
+def test_create_post_sends_poll_as_given():
+    responses.post(f"{BASE}/interaction/create-post", json=action_response("create_tweet"))
+    poll = {"choices": ["Option A", "Option B"], "durationMinutes": 1440}
+    make_client().post.create_post(auth_token=AUTH, text="Which one?", proxy=PROXY, poll=poll)
+    assert body(responses.calls[0]) == {
+        "authToken": AUTH, "text": "Which one?", "proxy": PROXY, "poll": poll,
+    }
+
+
+# ─── Media upload ────────────────────────────────────────────────────────────
+
+UPLOADED = {
+    "mediaId": MEDIA_ID, "mediaKey": f"7_{MEDIA_ID}", "type": "video", "size": 48104220,
+    "state": "in_progress", "progressPercent": 40, "checkAfterSecs": 5, "expiresAfterSecs": 86399,
+}
+FAILED = {
+    "mediaId": MEDIA_ID, "state": "failed", "progressPercent": None, "checkAfterSecs": None,
+    "error": {"code": 1, "name": "InvalidMedia", "message": "Unsupported video format"},
+    "expiresAfterSecs": 86255,
+}
+
+
+def test_upload_media_signature():
+    params = dict(inspect.signature(make_client().post.upload_media).parameters)
+    assert set(params) == {"auth_token", "proxy", "media"}
+    assert all(p.kind == inspect.Parameter.KEYWORD_ONLY for p in params.values())
+    assert all(p.default is inspect.Parameter.empty for p in params.values())
+
+
+@pytest.mark.parametrize("media", [
+    {"url": "https://example.com/clip.mp4"},
+    {"url": "https://example.com/clip.mp4", "type": "video/mp4"},
+    {"data": "BASE64_IMAGE_DATA", "type": "image/png"},
+])
+@responses.activate
+def test_upload_media_sends_one_media_object(media):
+    responses.post(f"{BASE}/interaction/upload-media", json={"data": UPLOADED})
+    result = make_client().post.upload_media(auth_token=AUTH, proxy=PROXY, media=media)
+
+    assert result == {"data": UPLOADED}
+    request = responses.calls[0].request
+    assert request.method == "POST"
+    assert request.url == f"{BASE}/interaction/upload-media"
+    assert body(responses.calls[0]) == {"authToken": AUTH, "proxy": PROXY, "media": media}
+
+
+@responses.activate
+def test_upload_media_is_not_repeated_after_a_failure():
+    responses.post(f"{BASE}/interaction/upload-media", status=502,
+                   json={"statusCode": 502, "message": "Upstream failure"})
+    with patch("tweetapi.client.time.sleep"), pytest.raises(ServerError):
+        TweetAPI(api_key="test-key").post.upload_media(
+            auth_token=AUTH, proxy=PROXY, media={"url": "https://example.com/clip.mp4"},
+        )
+    assert len(responses.calls) == 1
+
+
+@responses.activate
+def test_get_media_status_keeps_a_failed_state():
+    responses.get(f"{BASE}/interaction/media-status", json={"data": FAILED})
+    result = make_client().post.get_media_status(auth_token=AUTH, proxy=PROXY, media_id=MEDIA_ID)
+    assert result == {"data": FAILED}
 
 
 # ─── Trends ──────────────────────────────────────────────────────────────────

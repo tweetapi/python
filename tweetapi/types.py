@@ -6,7 +6,7 @@ All types mirror the API's JSON response shapes exactly.
 
 from __future__ import annotations
 
-from typing import Any, List as TypingList, Optional, TypedDict, Union
+from typing import Any, List as TypingList, Literal, Optional, TypedDict, Union
 
 
 # ─── Response Wrappers ───────────────────────────────────────────────────────
@@ -181,6 +181,9 @@ class ProfileMediaDataInput(TypedDict):
 
 ProfileMediaInput = Union[ProfileMediaUrlInput, ProfileMediaDataInput]
 
+# One file for ``post.upload_media``: a URL, or base64 ``data`` plus its MIME ``type``.
+MediaUploadInput = Union[ProfileMediaUrlInput, ProfileMediaDataInput]
+
 
 class MediaSize(TypedDict, total=False):
     width: int
@@ -224,6 +227,38 @@ class Media(TypedDict, total=False):
     sourceUserId: Optional[str]
 
 
+MediaProcessingState = Literal["pending", "in_progress", "succeeded", "failed"]
+
+
+class MediaProcessingError(TypedDict):
+    code: int
+    name: str
+    message: str
+
+
+class UploadedMedia(TypedDict):
+    mediaId: str
+    """Pass it as ``media_id`` in the ``media`` list of a post with media."""
+    mediaKey: Optional[str]
+    type: Literal["image", "gif", "video"]
+    size: int
+    """File size in bytes."""
+    state: MediaProcessingState
+    progressPercent: Optional[int]
+    checkAfterSecs: Optional[int]
+    expiresAfterSecs: Optional[int]
+
+
+class MediaStatus(TypedDict):
+    mediaId: str
+    state: MediaProcessingState
+    progressPercent: Optional[int]
+    checkAfterSecs: Optional[int]
+    error: Optional[MediaProcessingError]
+    """Set when ``state`` is ``"failed"``; the response is still a 200."""
+    expiresAfterSecs: Optional[int]
+
+
 # ─── Poll ────────────────────────────────────────────────────────────────────
 
 
@@ -241,6 +276,13 @@ class Poll(TypedDict, total=False):
     durationMinutes: int
     votingStatus: str
     totalVotes: int
+
+
+class PollInput(TypedDict):
+    choices: list[str]
+    """2 to 4 choices of up to 25 characters."""
+    durationMinutes: int
+    """5 to 10080 minutes (7 days)."""
 
 
 # ─── Card ────────────────────────────────────────────────────────────────────
@@ -734,6 +776,14 @@ class LoginApiResponse(TypedDict):
 
 class AccountUsageResponse(TypedDict):
     data: AccountUsage
+
+
+class UploadedMediaResponse(TypedDict):
+    data: UploadedMedia
+
+
+class MediaStatusResponse(TypedDict):
+    data: MediaStatus
 
 
 class TrendsByPlaceResponse(TypedDict):

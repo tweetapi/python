@@ -54,6 +54,15 @@ class InteractionResource:
             "authToken": auth_token, "tweetId": tweet_id, "proxy": proxy,
         })
 
+    def vote_poll(self, *, auth_token: str, tweet_id: str, choice: int, proxy: Optional[str] = None) -> ActionResponse:
+        """Vote in the poll on a tweet.
+
+        ``choice`` is the option number, 1 to 4, in the order x.com shows the options.
+        """
+        return self._client._post("/tw-v2/interaction/vote-poll", {
+            "authToken": auth_token, "tweetId": tweet_id, "choice": choice, "proxy": proxy,
+        })
+
     def follow(self, *, auth_token: str, user_id: str, username: Optional[str] = None, proxy: Optional[str] = None) -> ActionResponse:
         """Follow a user. ``username`` is the optional username of the target account."""
         return self._client._post("/tw-v2/interaction/follow", {

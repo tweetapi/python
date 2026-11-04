@@ -16,7 +16,7 @@ class UnencryptedDMResource:
         return self._client._post("/tw-v2/interaction/send-dm", {
             "authToken": auth_token, "conversationId": conversation_id,
             "text": text, "proxy": proxy, "requestId": request_id, "media": media,
-        })
+        }, upload=bool(media))
 
     def get_dm_permissions(self, *, auth_token: str, recipient_ids: str, proxy: Optional[str] = None) -> ApiResponse:
         """Check DM permissions for recipients."""

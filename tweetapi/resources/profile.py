@@ -27,13 +27,13 @@ class ProfileResource:
         """Update the authenticated user's avatar."""
         return self._client._post("/tw-v2/profile/avatar", {
             "authToken": auth_token, "media": media, "proxy": proxy,
-        })
+        }, upload=True)
 
     def banner(self, *, auth_token: str, media: ProfileMediaInput, proxy: Optional[str] = None) -> UserResponse:
         """Update the authenticated user's banner."""
         return self._client._post("/tw-v2/profile/banner", {
             "authToken": auth_token, "media": media, "proxy": proxy,
-        })
+        }, upload=True)
 
     def remove_banner(self, *, auth_token: str, proxy: Optional[str] = None) -> UserResponse:
         """Remove the authenticated user's banner."""
