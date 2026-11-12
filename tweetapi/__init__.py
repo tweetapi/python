@@ -39,4 +39,4 @@ __all__ = [
     "paginate_pages",
 ]
 
-__version__ = "2.8.0"
+__version__ = "2.9.0"

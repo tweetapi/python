@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         ListPaginatedResponse,
         PaginatedResponse,
         ApiResponse,
+        UserTimelineSortBy,
     )
 
 
@@ -40,9 +41,41 @@ class UserResource:
         """Get a user's tweets."""
         return self._client._get("/tw-v2/user/tweets", {"userId": user_id, "cursor": cursor})
 
-    def get_tweets_and_replies(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
-        """Get a user's tweets and replies."""
-        return self._client._get("/tw-v2/user/tweets-and-replies", {"userId": user_id, "cursor": cursor})
+    def get_tweets_and_replies(self, *, user_id: str, cursor: Optional[str] = None, sort_by: Optional[UserTimelineSortBy] = None) -> TweetsPaginatedResponse:
+        """Get a user's tweets and replies, as in the All view of their profile.
+
+        ``sort_by`` is "Recent" (default) or "MostLiked". Pass the same
+        ``sort_by`` on every page of one listing.
+        """
+        return self._client._get("/tw-v2/user/tweets-and-replies", {"userId": user_id, "cursor": cursor, "sortBy": sort_by})
+
+    def get_posts(self, *, user_id: str, cursor: Optional[str] = None, sort_by: Optional[UserTimelineSortBy] = None) -> TweetsPaginatedResponse:
+        """Get a user's own posts, as on the Posts tab of their profile.
+
+        Reposts and replies to other people are left out. A thread the user
+        wrote comes back as its first post followed by the user's replies in it.
+        ``sort_by`` is "Recent" (default) or "MostLiked". Pass the same
+        ``sort_by`` on every page of one listing.
+        """
+        return self._client._get("/tw-v2/user/posts", {"userId": user_id, "cursor": cursor, "sortBy": sort_by})
+
+    def get_replies(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get a user's replies, as on the Replies tab of their profile.
+
+        Each reply comes after the posts it answers, which are usually other
+        people's posts. Use ``author`` and ``replyTo`` to tell them apart. A
+        reply can come without the post it answers; its ``replyTo.tweetId``
+        still names that post.
+        """
+        return self._client._get("/tw-v2/user/replies", {"userId": user_id, "cursor": cursor})
+
+    def get_reposts(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
+        """Get the posts a user has reposted, as on the Reposts tab of their profile.
+
+        Each item has ``type`` "retweet" and the user as ``author``. The
+        original post is in ``retweetedTweet``.
+        """
+        return self._client._get("/tw-v2/user/reposts", {"userId": user_id, "cursor": cursor})
 
     def get_photos(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
         """Get a user's posts with photos, as on the Photos tab of their profile."""
@@ -64,9 +97,13 @@ class UserResource:
         """Get the Lists a user has been added to as a member."""
         return self._client._get("/tw-v2/user/list-memberships", {"userId": user_id, "cursor": cursor})
 
-    def get_highlights(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
-        """Get the posts a user has added to the Highlights tab of their profile."""
-        return self._client._get("/tw-v2/user/highlights", {"userId": user_id, "cursor": cursor})
+    def get_highlights(self, *, user_id: str, cursor: Optional[str] = None, sort_by: Optional[UserTimelineSortBy] = None) -> TweetsPaginatedResponse:
+        """Get the posts a user has added to the Highlights tab of their profile.
+
+        ``sort_by`` is "Recent" (default) or "MostLiked". Pass the same
+        ``sort_by`` on every page of one listing.
+        """
+        return self._client._get("/tw-v2/user/highlights", {"userId": user_id, "cursor": cursor, "sortBy": sort_by})
 
     def get_articles(self, *, user_id: str, cursor: Optional[str] = None) -> TweetsPaginatedResponse:
         """Get the posts that published a user's X Articles.
