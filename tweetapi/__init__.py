@@ -1,4 +1,4 @@
-"""TweetAPI Python SDK — Official client for the Twitter/X Data API.
+"""TweetAPI Python SDK: the TweetAPI-maintained client for the Twitter/X Data API.
 
 Usage::
 
