@@ -458,6 +458,11 @@ class SearchTopUserResult(TypedDict):
 SearchTopResult = Union[SearchTopTweetResult, SearchTopUserResult]
 
 
+# Order of a user's Posts, tweets and replies, or Highlights. "Recent" is the
+# default; "MostLiked" puts the most liked posts first.
+UserTimelineSortBy = Literal["Recent", "MostLiked"]
+
+
 # ─── List ────────────────────────────────────────────────────────────────────
 
 

@@ -53,13 +53,16 @@ next_page = client.user.get_followers(
 | `client.user.get_by_user_id(user_id=...)` | Get user profile by ID |
 | `client.user.get_by_user_ids(user_ids=...)` | Get up to 100 users by IDs |
 | `client.user.get_tweets(user_id=...)` | Get a user's tweets |
-| `client.user.get_tweets_and_replies(user_id=...)` | Get tweets and replies |
+| `client.user.get_tweets_and_replies(user_id=..., sort_by=...)` | Get tweets and replies, as in the All view of a profile |
+| `client.user.get_posts(user_id=..., sort_by=...)` | Get a user's own posts, as on the Posts tab of their profile |
+| `client.user.get_replies(user_id=...)` | Get a user's replies with the posts they answer, as on the Replies tab |
+| `client.user.get_reposts(user_id=...)` | Get the posts a user has reposted, as on the Reposts tab |
 | `client.user.get_photos(user_id=...)` | Get a user's posts with photos |
 | `client.user.get_videos(user_id=...)` | Get a user's posts with videos |
 | `client.user.get_affiliates(user_id=...)` | Get the accounts affiliated with a business profile |
 | `client.user.get_lists(user_id=...)` | Get the Lists on a user's Lists tab |
 | `client.user.get_list_memberships(user_id=...)` | Get the Lists a user is a member of |
-| `client.user.get_highlights(user_id=...)` | Get a user's Highlights |
+| `client.user.get_highlights(user_id=..., sort_by=...)` | Get a user's Highlights |
 | `client.user.get_articles(user_id=...)` | Get the posts that published a user's Articles |
 | `client.user.get_similar_accounts(user_id=...)` | Get accounts similar to a user (one page, no cursor) |
 | `client.user.get_following(user_id=...)` | Get who a user follows |
@@ -72,6 +75,38 @@ next_page = client.user.get_followers(
 | `client.user.get_followers_ids(user_id=...)` | Get follower user IDs |
 | `client.user.check_follow(subject_id=..., target_id=...)` | Check follow relationship |
 | `client.user.about_account(username=...)` | Get account transparency info |
+
+#### Posts, replies and reposts
+
+`get_posts` returns only the user's own posts, with no reposts and no replies to other people. A thread the user wrote comes back as its first post followed by the user's replies in it.
+
+`get_replies` puts each of the user's replies after the posts it answers, which are usually other people's posts. Use `author` and `replyTo` to tell them apart. A reply can come without the post it answers. Its `replyTo["tweetId"]` still names that post, so you can fetch it with `client.tweet.get_details_and_conversation()`.
+
+`get_reposts` returns one item per repost. Its `type` is `"retweet"`, its `author` is the user, and the original post is in `retweetedTweet`.
+
+`get_posts`, `get_tweets_and_replies` and `get_highlights` take an optional `sort_by`: `"Recent"` (the default) or `"MostLiked"`. Leave it out for the default order, and pass the same `sort_by` on every page of one listing. A short page does not mean the listing has ended. `paginate()` keeps going until `nextCursor` is `None`.
+
+```python
+from tweetapi import paginate
+
+user_id = "44196397"
+
+# The Posts tab, most liked first
+for post in paginate(
+    lambda cursor: client.user.get_posts(user_id=user_id, sort_by="MostLiked", cursor=cursor),
+    max_pages=3,
+):
+    print(post["likeCount"], post["text"])
+
+# The Replies tab, keeping only the user's own replies
+page = client.user.get_replies(user_id=user_id)
+replies = [tweet for tweet in page["data"] if tweet["author"]["id"] == user_id]
+
+# The Reposts tab
+for repost in client.user.get_reposts(user_id=user_id)["data"]:
+    original = repost["retweetedTweet"]
+    print(original["author"]["username"], original["text"])
+```
 
 ### Tweet
 
